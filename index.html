@@ -19,6 +19,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="(مشكاة) — Platform Resmi Murojaah & Pembelajaran Santri">
   <meta name="twitter:description" content="Platform pembelajaran santri modern berbasis web standar W3C.">
+  <meta name="twitter:image" content="assets/icons/logo.svg">
 
   <!-- PWA & Favicon -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -33,6 +34,12 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body style="background:var(--body-bg);">
+
+<noscript>
+  <div style="background:#b91c1c;color:#ffffff;padding:14px;text-align:center;font-weight:600;font-size:0.95rem;">
+    ⚠️ Peramban Anda menonaktifkan JavaScript. Mohon aktifkan JavaScript untuk menggunakan fitur (مشكاة).
+  </div>
+</noscript>
 
 <!-- Official Navigation Bar -->
 <header class="portal-nav">
@@ -50,7 +57,23 @@
     <a href="privacy.html" class="portal-nav-link">Piagam & Privasi</a>
     <a href="#authHub" class="btn btn-outline btn-sm" style="color:#ffffff;border-color:var(--gold);" id="navAuthBtn">🔐 Masuk Akun</a>
   </nav>
+
+  <button class="landing-hamburger" onclick="toggleLandingMenu()" aria-label="Menu Navigasi Mobile">☰</button>
 </header>
+
+<!-- Mobile Navigation Overlay -->
+<div class="landing-mobile-menu" id="landingMobileMenu" onclick="if(event.target===this) toggleLandingMenu()">
+  <div class="landing-mobile-menu-inner">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--cream-dark);">
+      <span style="font-weight:700;color:var(--primary-dark);">(مشكاة) Menu</span>
+      <button onclick="toggleLandingMenu()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+    </div>
+    <a href="#fitur" onclick="toggleLandingMenu()">✨ Pilar Fitur Utama</a>
+    <a href="#keunggulan" onclick="toggleLandingMenu()">🛡️ Keunggulan Standar</a>
+    <a href="privacy.html">📜 Piagam & Kebijakan Privasi</a>
+    <a href="#authHub" onclick="toggleLandingMenu()" style="color:var(--primary);font-weight:700;">🔐 Masuk / Daftar Santri</a>
+  </div>
+</div>
 
 <!-- Hero Section -->
 <section class="portal-hero">
@@ -320,6 +343,11 @@
 
 <script src="assets/js/app.js"></script>
 <script>
+  function toggleLandingMenu() {
+    const m = document.getElementById('landingMobileMenu');
+    if (m) m.classList.toggle('active');
+  }
+
   // Check session on load
   const session = getSession();
   if (session) {

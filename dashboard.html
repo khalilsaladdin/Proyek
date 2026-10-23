@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>(مشكاة) — Dashboard Resmi</title>
+  <meta name="description" content="Dashboard utama santri (مشكاة): statistik murojaah, jadwal harian, grup kelas aktif, audio, dan mutiara faidah ilmu.">
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1a5c38">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -302,10 +305,10 @@
       itemsHtml += classesData.slice(0, 2).map(c => `
         <div style="padding:10px 0;border-bottom:1px solid var(--cream-dark);">
           <div class="flex items-center justify-between mb-1">
-            <span style="font-weight:600;font-size:0.9rem;color:var(--primary-dark);">🏫 ${c.nama}</span>
-            <span class="badge badge-gold" style="font-size:0.7rem;">🔑 ${c.kode}</span>
+            <span style="font-weight:600;font-size:0.9rem;color:var(--primary-dark);">🏫 ${escapeHtml(c.nama)}</span>
+            <span class="badge badge-gold" style="font-size:0.7rem;">🔑 ${escapeHtml(c.kode)}</span>
           </div>
-          <div style="font-size:0.78rem;color:var(--text-muted);">👤 Pengampu: ${c.pemateri} • 👥 ${c.anggota.length} Santri</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">👤 Pengampu: ${escapeHtml(c.pemateri)} • 👥 ${c.anggota ? c.anggota.length : 0} Santri</div>
         </div>
       `).join('');
     }
@@ -313,12 +316,12 @@
       itemsHtml += halaqahData.slice(0, 2 - classesData.length).map(h => `
         <div style="padding:10px 0;border-bottom:1px solid var(--cream-dark);">
           <div class="flex items-center justify-between mb-1">
-            <span style="font-weight:600;font-size:0.9rem;color:var(--primary-dark);">${h.judul}</span>
+            <span style="font-weight:600;font-size:0.9rem;color:var(--primary-dark);">${escapeHtml(h.judul)}</span>
             <span class="badge ${h.status === 'ongoing' ? 'badge-success' : 'badge-warning'}" style="font-size:0.7rem;">
               ${h.status === 'ongoing' ? '🟢 Berlangsung' : '⏳ Terjadwal'}
             </span>
           </div>
-          <div style="font-size:0.78rem;color:var(--text-muted);">📖 ${h.materi} • ⏰ ${h.waktu}</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">📖 ${escapeHtml(h.materi)} • ⏰ ${escapeHtml(h.waktu)}</div>
         </div>
       `).join('');
     }
@@ -341,10 +344,10 @@
     scheduleEl.innerHTML = todayItems.slice(0, 4).map(m => `
       <div class="murojaah-item ${m.status}" style="margin-bottom:8px;">
         <div class="murojaah-info">
-          <div class="murojaah-materi" style="font-size:0.88rem;">${m.materi}</div>
+          <div class="murojaah-materi" style="font-size:0.88rem;">${escapeHtml(m.materi)}</div>
           <div class="murojaah-meta">
-            <span>⏰ ${m.waktu}</span>
-            <span class="badge badge-${m.status==='selesai'?'success':m.status==='terlewat'?'danger':'warning'}">${m.status}</span>
+            <span>⏰ ${escapeHtml(m.waktu)}</span>
+            <span class="badge badge-${m.status==='selesai'?'success':m.status==='terlewat'?'danger':'warning'}">${escapeHtml(m.status)}</span>
           </div>
         </div>
       </div>`).join('');
@@ -377,7 +380,7 @@
       <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cream-dark);">
         <span style="font-size:1.2rem;">${a.icon}</span>
         <div style="flex:1;">
-          <div style="font-size:0.83rem;font-weight:500;">${a.label}</div>
+          <div style="font-size:0.83rem;font-weight:500;">${escapeHtml(a.label)}</div>
           <div style="font-size:0.74rem;color:var(--text-muted);">${formatDate(a.time)}</div>
         </div>
       </div>`).join('');

@@ -2,6 +2,17 @@
 // (مشكاة) — Global App Helpers
 // ============================================================
 
+// ── XSS Protection ──────────────────────────────────────────
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // ── Standalone SHA-256 Fallback ─────────────────────────────
 // Guarantees hashing works 100% on any browser, webview, or hosting environment
 function sha256Fallback(ascii) {
@@ -73,10 +84,12 @@ function sha256Fallback(ascii) {
 // ── Auth ────────────────────────────────────────────────────
 
 async function hashPassword(password) {
+  const salt = 'misykah_v1_salt_';
+  const salted = salt + password;
   try {
     if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
       const encoder = new TextEncoder();
-      const data = encoder.encode(password);
+      const data = encoder.encode(salted);
       const hashBuffer = await crypto.subtle.digest('SHA-256', data);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -84,7 +97,7 @@ async function hashPassword(password) {
   } catch (e) {
     console.warn('[Misykah] Web Crypto API failed, using fallback:', e);
   }
-  return sha256Fallback(password);
+  return sha256Fallback(salted);
 }
 
 async function verifyPassword(password, hash) {
@@ -142,6 +155,13 @@ function logout() {
 // ── ID & Data Helpers ────────────────────────────────────────
 
 function generateId() {
+  try {
+    if (window.crypto && window.crypto.getRandomValues) {
+      const arr = new Uint8Array(12);
+      crypto.getRandomValues(arr);
+      return Date.now().toString(36) + Array.from(arr, b => b.toString(36)).join('').substr(0, 8);
+    }
+  } catch(e) {}
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
@@ -198,10 +218,13 @@ function saveUsers(users) {
 // there are always active accounts ready to test immediately!
 async function initDefaultUsers() {
   try {
+    const SEED_VERSION = 'v2_salted';
     let users = getUsers();
-    if (!users || users.length === 0) {
+    const seedVer = localStorage.getItem('misykah_seed_version') || '';
+    if (!users || users.length === 0 || seedVer !== SEED_VERSION) {
       const santriPass = await hashPassword('santri123');
       const adminPass = await hashPassword('admin123');
+      const existingCustomUsers = users.filter(u => u.id !== 'usr_demo_santri' && u.id !== 'usr_demo_admin');
       users = [
         {
           id: 'usr_demo_santri',
@@ -216,10 +239,12 @@ async function initDefaultUsers() {
           username: 'admin',
           password: adminPass,
           createdAt: todayStr()
-        }
+        },
+        ...existingCustomUsers
       ];
       saveUsers(users);
-      console.log('[Misykah] Default accounts initialized: santri & admin');
+      localStorage.setItem('misykah_seed_version', SEED_VERSION);
+      console.log('[Misykah] Default accounts initialized/updated (salted v2)');
     }
   } catch(e) {
     console.warn('[Misykah] Error initializing default users:', e);
@@ -526,3 +551,12 @@ if ('serviceWorker' in navigator && window.location.protocol.startsWith('http'))
       });
   });
 }
+
+// ── Global Error Safety Net ───────────────────────────────────
+window.addEventListener('error', function(e) {
+  console.error('[Misykah] Uncaught error:', e.error || e.message);
+});
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('[Misykah] Unhandled promise rejection:', e.reason);
+  e.preventDefault();
+});

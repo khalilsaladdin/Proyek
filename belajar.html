@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>(مشكاة) — Belajar Bersama & Grup Kelas</title>
+  <meta name="description" content="Ruang belajar santri, grup kelas berbasis kode akses privat, halaqah murojaah, partner tasmi', dan forum mudzakarah ilmiah (مشكاة).">
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1a5c38">
@@ -480,22 +482,23 @@
     }
 
     grid.innerHTML = list.map(k => {
-      const isMember = k.anggota.includes(session.name);
+      const isMember = k.anggota && k.anggota.includes(session.name);
+      const safeLink = k.link && /^https?:\/\//i.test(k.link.trim()) ? escapeHtml(k.link.trim()) : '';
       return `
         <div class="halaqah-card">
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span class="badge badge-gold">🔑 Kode: ${k.kode}</span>
-              <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">👥 ${k.anggota.length} Anggota</span>
+              <span class="badge badge-gold">🔑 Kode: ${escapeHtml(k.kode)}</span>
+              <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">👥 ${k.anggota ? k.anggota.length : 0} Anggota</span>
             </div>
-            <h4 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:6px;font-weight:700;">🏫 ${k.nama}</h4>
+            <h4 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:6px;font-weight:700;">🏫 ${escapeHtml(k.nama)}</h4>
             <div style="font-size:0.83rem;color:var(--text-muted);margin-bottom:10px;line-height:1.5;">
-              <div>👤 <strong>Pengampu:</strong> ${k.pemateri}</div>
-              ${k.link ? `<div>📍 <strong>Link Pertemuan:</strong> <a href="${k.link}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:underline;">Buka Tautan</a></div>` : ''}
+              <div>👤 <strong>Pengampu:</strong> ${escapeHtml(k.pemateri)}</div>
+              ${safeLink ? `<div>📍 <strong>Link Pertemuan:</strong> <a href="${safeLink}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:underline;">Buka Tautan</a></div>` : ''}
             </div>
             <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;font-weight:600;">Daftar Anggota Santri:</div>
             <div class="participant-list mb-3">
-              ${k.anggota.map(a => `<span class="participant-chip">👤 ${a}</span>`).join('')}
+              ${(k.anggota || []).map(a => `<span class="participant-chip">👤 ${escapeHtml(a)}</span>`).join('')}
             </div>
           </div>
           <div class="flex justify-between items-center mt-3" style="border-top:1px solid var(--cream-dark);padding-top:12px;">
@@ -613,20 +616,20 @@
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="halaqah-status-pill ${statusClass}">${statusLabel}</span>
-              <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">👥 ${h.participants.length}/${h.max} Santri</span>
+              <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">👥 ${(h.participants || []).length}/${h.max} Santri</span>
             </div>
-            <h4 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:6px;">${h.judul}</h4>
-            <p style="font-size:0.83rem;color:var(--primary);font-weight:600;margin-bottom:8px;">📖 ${h.materi}</p>
+            <h4 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:6px;">${escapeHtml(h.judul)}</h4>
+            <p style="font-size:0.83rem;color:var(--primary);font-weight:600;margin-bottom:8px;">📖 ${escapeHtml(h.materi)}</p>
             <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">
-              <div>⏰ <strong>Waktu:</strong> ${h.waktu}</div>
-              <div>👤 <strong>Fasilitator:</strong> ${h.creatorName}</div>
-              ${h.link ? `<div>📍 <strong>Lokasi/Link:</strong> <span style="color:var(--primary);">${h.link}</span></div>` : ''}
+              <div>⏰ <strong>Waktu:</strong> ${escapeHtml(h.waktu)}</div>
+              <div>👤 <strong>Fasilitator:</strong> ${escapeHtml(h.creatorName)}</div>
+              ${h.link ? `<div>📍 <strong>Lokasi/Link:</strong> <span style="color:var(--primary);">${escapeHtml(h.link)}</span></div>` : ''}
             </div>
-            ${h.deskripsi ? `<p style="font-size:0.82rem;color:#444;background:#fbfbf7;padding:8px 10px;border-radius:6px;margin-bottom:10px;">${h.deskripsi}</p>` : ''}
+            ${h.deskripsi ? `<p style="font-size:0.82rem;color:inherit;background:var(--cream-dark);padding:8px 10px;border-radius:6px;margin-bottom:10px;">${escapeHtml(h.deskripsi)}</p>` : ''}
 
             <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Peserta Terdaftar:</div>
             <div class="participant-list">
-              ${h.participants.map(p => `<span class="participant-chip">👤 ${p}</span>`).join('')}
+              ${(h.participants || []).map(p => `<span class="participant-chip">👤 ${escapeHtml(p)}</span>`).join('')}
             </div>
           </div>
 
@@ -716,19 +719,19 @@
             <span class="badge ${t.status === 'matched' ? 'badge-success' : 'badge-warning'}">
               ${t.status === 'matched' ? '✓ Sudah Ada Partner' : '⏳ Mencari Teman'}
             </span>
-            <span style="font-size:0.75rem;color:var(--text-muted);">👤 ${t.requesterName}</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);">👤 ${escapeHtml(t.requesterName)}</span>
           </div>
-          <h4 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:6px;">📖 ${t.materi}</h4>
+          <h4 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:6px;">📖 ${escapeHtml(t.materi)}</h4>
           <div style="font-size:0.83rem;color:var(--text-muted);margin-bottom:8px;">
-            <div>⏰ <strong>Jadwal:</strong> ${t.waktu}</div>
-            ${t.catatan ? `<div class="mt-1" style="background:#fdfcf7;padding:6px 10px;border-radius:6px;border-left:3px solid var(--gold);">${t.catatan}</div>` : ''}
+            <div>⏰ <strong>Jadwal:</strong> ${escapeHtml(t.waktu)}</div>
+            ${t.catatan ? `<div class="mt-1" style="background:var(--cream-dark);padding:6px 10px;border-radius:6px;border-left:3px solid var(--gold);">${escapeHtml(t.catatan)}</div>` : ''}
           </div>
         </div>
 
         <div class="mt-auto" style="border-top:1px solid var(--cream-dark);padding-top:12px;display:flex;gap:8px;align-items:center;">
           ${t.status === 'matched' ? `
             <div style="font-size:0.82rem;color:var(--primary);font-weight:600;flex:1;">
-              ✨ Disimak oleh: <strong>${t.partnerName}</strong>
+              ✨ Disimak oleh: <strong>${escapeHtml(t.partnerName)}</strong>
             </div>
           ` : `
             <button class="btn btn-primary btn-sm" style="flex:1;" onclick="acceptTasmi('${t.id}')">
@@ -819,15 +822,15 @@
     container.innerHTML = list.map(q => `
       <div class="discussion-card">
         <div class="discussion-header">
-          <div class="avatar-sm">${q.authorName.charAt(0).toUpperCase()}</div>
+          <div class="avatar-sm">${escapeHtml((q.authorName || 'S').charAt(0).toUpperCase())}</div>
           <div style="flex:1;">
-            <div style="font-weight:600;font-size:0.95rem;color:var(--primary-dark);">${q.authorName}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">${formatDate(q.tanggal)} • <span style="color:var(--primary);font-weight:500;">${q.topik}</span></div>
+            <div style="font-weight:600;font-size:0.95rem;color:var(--primary-dark);">${escapeHtml(q.authorName)}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">${formatDate(q.tanggal)} • <span style="color:var(--primary);font-weight:500;">${escapeHtml(q.topik)}</span></div>
           </div>
           <button class="btn btn-danger btn-sm" onclick="deleteQuestion('${q.id}')" title="Hapus Pertanyaan">🗑️</button>
         </div>
-        <div style="font-size:0.92rem;color:inherit;line-height:1.6;margin-bottom:14px;background:#fcfbf6;padding:12px;border-radius:8px;">
-          ${q.pertanyaan.replace(/\n/g, '<br>')}
+        <div style="font-size:0.92rem;color:inherit;line-height:1.6;margin-bottom:14px;background:var(--cream-dark);padding:12px;border-radius:8px;">
+          ${escapeHtml(q.pertanyaan).replace(/\n/g, '<br>')}
         </div>
 
         <!-- Answers -->
@@ -838,10 +841,10 @@
           ${(q.answers || []).map(ans => `
             <div class="comment-box">
               <div class="flex items-center justify-between mb-1">
-                <span style="font-size:0.8rem;font-weight:700;color:var(--primary);">${ans.authorName}</span>
+                <span style="font-size:0.8rem;font-weight:700;color:var(--primary);">${escapeHtml(ans.authorName)}</span>
                 <span style="font-size:0.72rem;color:var(--text-muted);">${ans.tanggal ? formatDate(ans.tanggal) : ''}</span>
               </div>
-              <div style="font-size:0.85rem;color:inherit;line-height:1.5;">${ans.text}</div>
+              <div style="font-size:0.85rem;color:inherit;line-height:1.5;">${escapeHtml(ans.text)}</div>
             </div>
           `).join('')}
 

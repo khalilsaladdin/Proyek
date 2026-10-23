@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>(مشكاة) — Jadwal Murojaah</title>
+  <meta name="description" content="Manajemen jadwal murojaah Al-Qur'an dan mutun ilmiah terstruktur harian santri (مشكاة).">
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1a5c38">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -363,14 +366,14 @@
     el.innerHTML = filtered.map(m => `
       <div class="murojaah-item ${m.status}">
         <div class="murojaah-info">
-          <div class="murojaah-materi">${m.materi}</div>
+          <div class="murojaah-materi">${escapeHtml(m.materi)}</div>
           <div class="murojaah-meta">
-            <span>${waktuIkon[m.waktu]||'⏰'} ${m.waktu}</span>
+            <span>${waktuIkon[m.waktu]||'⏰'} ${escapeHtml(m.waktu)}</span>
             <span>📅 ${formatDate(m.jadwal)}</span>
-            <span class="badge badge-primary">${m.kategori}</span>
-            <span class="badge badge-${statusBadge[m.status]}">${statusLabel[m.status]}</span>
+            <span class="badge badge-primary">${escapeHtml(m.kategori)}</span>
+            <span class="badge badge-${statusBadge[m.status] || 'warning'}">${statusLabel[m.status] || m.status}</span>
           </div>
-          ${m.catatan ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">📝 ${m.catatan}</div>` : ''}
+          ${m.catatan ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">📝 ${escapeHtml(m.catatan)}</div>` : ''}
         </div>
         <div class="murojaah-actions">
           ${m.status !== 'selesai' ? `<button class="btn btn-sm btn-outline" onclick="tandaiSelesai('${m.id}')" title="Tandai Selesai">✅</button>` : ''}

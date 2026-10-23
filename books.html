@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>(مشكاة) — Perpustakaan Kitab Digital</title>
+  <meta name="description" content="Perpustakaan kitab kuning dan dokumen PDF santri (مشكاة) berbasis IndexedDB Blob Storage tanpa batas memori browser.">
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1a5c38">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -186,7 +189,7 @@
     const infoEl = document.getElementById('fileInfo');
     infoEl.style.display = 'block';
     infoEl.style.borderLeft = '3px solid var(--primary)';
-    infoEl.innerHTML = `📁 <strong>${file.name}</strong> — ${sizeStr} <span class="badge badge-success" style="font-size:0.7rem;margin-left:6px;">IndexedDB Blob</span>`;
+    infoEl.innerHTML = `📁 <strong>${escapeHtml(file.name)}</strong> — ${sizeStr} <span class="badge badge-success" style="font-size:0.7rem;margin-left:6px;">IndexedDB Blob</span>`;
   }
 
   async function uploadBuku() {
@@ -341,12 +344,12 @@
       <div class="book-card">
         <div class="book-cover" style="background:linear-gradient(145deg,${colors[0]},${colors[1]});">
           <span class="book-cover-icon">${icon}</span>
-          <span class="book-cover-cat">${b.kategori}</span>
+          <span class="book-cover-cat">${escapeHtml(b.kategori)}</span>
         </div>
         <div class="book-body">
-          <div class="book-title">${b.judul}</div>
-          <div class="book-author">✍️ ${b.penulis}</div>
-          ${b.deskripsi ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;line-height:1.4;">${b.deskripsi.length>80?b.deskripsi.slice(0,80)+'...':b.deskripsi}</div>` : ''}
+          <div class="book-title">${escapeHtml(b.judul)}</div>
+          <div class="book-author">✍️ ${escapeHtml(b.penulis)}</div>
+          ${b.deskripsi ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;line-height:1.4;">${escapeHtml(b.deskripsi.length>80?b.deskripsi.slice(0,80)+'...':b.deskripsi)}</div>` : ''}
           <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:10px;">📅 ${formatDate(b.tanggal)} ${sizeStr ? `• 💾 ${sizeStr}` : ''}</div>
           <div class="book-actions">
             <button class="btn btn-primary btn-sm" onclick="bacaBuku('${b.id}')">📖 Baca</button>

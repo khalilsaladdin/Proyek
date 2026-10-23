@@ -1188,7 +1188,7 @@ audio::-webkit-media-controls-panel { background: var(--cream-dark); }
 /* ── Dark Mode Toggle Button ───────────────────────────────── */
 .theme-toggle {
   position: fixed;
-  bottom: 24px;
+  bottom: 84px;
   right: 24px;
   width: 50px;
   height: 50px;
@@ -1638,4 +1638,92 @@ audio::-webkit-media-controls-panel { background: var(--cream-dark); }
   .hero-title { font-size: 1.6rem; }
   .hero-calligraphy { font-size: 2.8rem; }
   .footer-grid { grid-template-columns: 1fr; gap: 24px; }
+  .landing-hamburger { display: flex !important; }
+}
+
+/* ── Dark Mode Button & Modal Fixes ──────────────────────── */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .btn-full {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .modal-header {
+  background: var(--card-bg) !important;
+}
+
+/* ── Landing Page Mobile Navigation ──────────────────────── */
+.landing-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--border-radius-sm);
+  width: 40px;
+  height: 40px;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.landing-hamburger:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.landing-mobile-menu {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  padding: 20px;
+}
+.landing-mobile-menu.active {
+  display: flex;
+  flex-direction: column;
+}
+.landing-mobile-menu-inner {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 24px 20px;
+  margin-top: 50px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.landing-mobile-menu-inner a {
+  padding: 12px 16px;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-dark);
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--cream-dark);
+}
+.landing-mobile-menu-inner a:last-child {
+  border-bottom: none;
+}
+.landing-mobile-menu-inner a:hover {
+  background: var(--cream);
+  color: var(--primary);
+}
+
+/* ── Accessibility Utility ───────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

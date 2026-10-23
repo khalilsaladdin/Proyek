@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>(مشكاة) — Studio Audio Muhadharah</title>
+  <meta name="description" content="Studio audio rekaman kajian, ceramah, dan muhadharah santri (مشكاة) dengan pemutar read-on-demand dan mode looping.">
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1a5c38">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -148,7 +151,7 @@
     const infoText = document.getElementById('fileInfoText');
     infoEl.style.display = 'block';
     infoEl.style.borderLeft = '3px solid var(--primary)';
-    infoText.innerHTML = `📁 <strong>${file.name}</strong> — ${sizeStr} <span class="badge badge-success" style="font-size:0.7rem;margin-left:6px;">IndexedDB Blob</span>`;
+    infoText.innerHTML = `📁 <strong>${escapeHtml(file.name)}</strong> — ${sizeStr} <span class="badge badge-success" style="font-size:0.7rem;margin-left:6px;">IndexedDB Blob</span>`;
   }
 
   async function uploadAudio() {
@@ -248,10 +251,10 @@
           <div class="audio-card-header">
             <div class="audio-thumb">🎧</div>
             <div class="audio-info">
-              <div class="audio-title">${a.judul}</div>
+              <div class="audio-title">${escapeHtml(a.judul)}</div>
               <div class="audio-meta">
-                <div>👤 ${a.ustadz}</div>
-                ${a.topik ? `<div>🏷 ${a.topik}</div>` : ''}
+                <div>👤 ${escapeHtml(a.ustadz)}</div>
+                ${a.topik ? `<div>🏷 ${escapeHtml(a.topik)}</div>` : ''}
                 <div>📅 ${formatDate(a.tanggal)} ${sizeStr ? `• 💾 ${sizeStr}` : ''}</div>
               </div>
             </div>
@@ -397,6 +400,14 @@
     btn.classList.toggle('active', audio.loop);
     showToast(audio.loop ? 'Mode loop diaktifkan 🔁' : 'Mode loop dimatikan', audio.loop ? 'success' : 'info');
   }
+
+  // Cleanup object URLs on unload to prevent memory leaks
+  window.addEventListener('beforeunload', () => {
+    if (window.MisykahDB && window.MisykahDB._activeUrls) {
+      window.MisykahDB._activeUrls.forEach(url => URL.revokeObjectURL(url));
+      window.MisykahDB._activeUrls.clear();
+    }
+  });
 
   renderList();
 </script>

@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>(مشكاة) — Kolom Faidah Ilmu</title>
+  <meta name="description" content="Kolom catatan mutiara faidah ilmu, kutipan bahasa Arab, rujukan kitab, dan penanda faidah ilmiah santri (مشكاة).">
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1a5c38">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -397,28 +400,28 @@
       <div class="faidah-card ${f.isPinned ? 'pinned' : ''}">
         <div class="faidah-header">
           <div>
-            <span class="faidah-badge">${f.kategori}</span>
-            <div class="faidah-title mt-1">${f.judul}</div>
+            <span class="faidah-badge">${escapeHtml(f.kategori)}</span>
+            <div class="faidah-title mt-1">${escapeHtml(f.judul)}</div>
           </div>
           <button onclick="togglePin('${f.id}')" title="${f.isPinned ? 'Lepas Favorit' : 'Jadikan Favorit'}" style="background:none;border:none;font-size:1.2rem;cursor:pointer;">
             ${f.isPinned ? '⭐' : '☆'}
           </button>
         </div>
 
-        ${f.arabicText ? `<div class="faidah-arabic">${f.arabicText}</div>` : ''}
+        ${f.arabicText ? `<div class="faidah-arabic">${escapeHtml(f.arabicText)}</div>` : ''}
 
-        <div class="faidah-body">${f.isi.replace(/\n/g, '<br>')}</div>
+        <div class="faidah-body">${escapeHtml(f.isi).replace(/\n/g, '<br>')}</div>
 
         ${f.sumber ? `
           <div class="faidah-source">
             <span>📚</span>
-            <span>${f.sumber}</span>
+            <span>${escapeHtml(f.sumber)}</span>
           </div>
         ` : ''}
 
         <div class="faidah-footer">
           <div class="faidah-tags">
-            ${(f.tags || []).map(t => `<span class="faidah-tag">#${t}</span>`).join('')}
+            ${(f.tags || []).map(t => `<span class="faidah-tag">#${escapeHtml(t)}</span>`).join('')}
           </div>
           <div class="faidah-actions">
             <button onclick="copyFaidah('${f.id}')" class="btn btn-outline btn-sm" title="Salin Teks">📋 Salin</button>

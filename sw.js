@@ -68,7 +68,7 @@ self.addEventListener('fetch', event => {
       // Offline fallback
       const acceptHeader = event.request.headers.get('accept') || '';
       if (acceptHeader.includes('text/html')) {
-        return caches.match('./dashboard.html').then(res => res || caches.match('./index.html'));
+        return caches.match('./index.html').then(res => res || caches.match('./dashboard.html'));
       }
     })
   );
