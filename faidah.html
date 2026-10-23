@@ -55,6 +55,17 @@
   </div>
 
   <div class="content-area">
+    <!-- Guest Notice Banner (Shown if not logged in) -->
+    <div id="guestBanner" style="display:none;background:rgba(26,92,56,0.08);border-left:4px solid var(--primary);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-weight:700;color:var(--primary-dark);font-size:0.95rem;">🌿 Mode Tamu — Baca Bebas Kolom Faidah (مشكاة)</div>
+          <div style="font-size:0.83rem;color:var(--text-muted);margin-top:2px;">Anda dapat membaca, mencari, dan menyalin mutiara faidah ilmu di bawah ini. Masuk akun untuk menyimpan catatan faidah pribadi Anda.</div>
+        </div>
+        <a href="index.html#authHub" class="btn btn-primary btn-sm" style="font-weight:700;">🔐 Masuk / Daftar Akun</a>
+      </div>
+    </div>
+
     <!-- Quote -->
     <div class="quote-block mb-3">
       <div class="quote-arabic">قَيِّدُوا الْعِلْمَ بِالْكِتَابِ</div>
@@ -174,18 +185,56 @@
 
 <script src="assets/js/app.js"></script>
 <script>
-  requireAuth();
+  // Guest-friendly access: Allowed to browse and read without logging in!
   const session = getSession();
 
   document.getElementById('hijriDate').textContent = getHijriDate();
   document.getElementById('miladiDate').textContent = getMiladiDate();
-  initSidebar();
+
+  if (session) {
+    initSidebar();
+  } else {
+    // Guest Mode UI adjustments
+    const banner = document.getElementById('guestBanner');
+    if (banner) banner.style.display = 'block';
+
+    const userInfoEl = document.getElementById('userInfo');
+    if (userInfoEl) {
+      userInfoEl.innerHTML = `
+        <div style="font-size:0.85rem;font-weight:600;color:var(--primary-dark);">👤 Mode Tamu</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Hanya Baca & Salin</div>
+      `;
+    }
+    const logoutBtn = document.querySelector('.btn-logout');
+    if (logoutBtn) {
+      logoutBtn.innerHTML = '🔐 Masuk Akun';
+      logoutBtn.onclick = () => window.location.href = 'index.html#authHub';
+    }
+  }
 
   let onlyFav = false;
 
-  // Sample seed data if user has no fawaid yet
+  function getFaidahStorageKey() {
+    return session ? `misykah_faidah_${session.userId}` : 'misykah_guest_faidah';
+  }
+
+  function getFaidahList() {
+    try {
+      return JSON.parse(localStorage.getItem(getFaidahStorageKey()) || '[]');
+    } catch(e) {
+      return [];
+    }
+  }
+
+  function saveFaidahList(list) {
+    try {
+      localStorage.setItem(getFaidahStorageKey(), JSON.stringify(list));
+    } catch(e) {}
+  }
+
+  // Sample seed data if user/guest has no fawaid yet
   function initDefaultFaidah() {
-    let list = getUserData('faidah', session.userId);
+    let list = getFaidahList();
     if (!list || list.length === 0) {
       list = [
         {
@@ -222,7 +271,7 @@
           tanggal: todayStr()
         }
       ];
-      saveUserData('faidah', session.userId, list);
+      saveFaidahList(list);
     }
   }
 
@@ -242,6 +291,11 @@
   }
 
   function openAddModal() {
+    if (!session) {
+      showToast('Silakan masuk akun santri untuk mencatat faidah pribadi Anda 🌿', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     document.getElementById('modalTitle').textContent = '✨ Catat Faidah Ilmu';
     document.getElementById('faidahId').value = '';
     document.getElementById('faidahJudul').value = '';
@@ -255,7 +309,12 @@
   }
 
   function editFaidah(id) {
-    const list = getUserData('faidah', session.userId);
+    if (!session) {
+      showToast('Silakan masuk akun santri untuk mengedit faidah 🌿', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
+    const list = getFaidahList();
     const item = list.find(f => f.id === id);
     if (!item) return;
 
@@ -273,6 +332,10 @@
 
   function handleSaveFaidah(e) {
     e.preventDefault();
+    if (!session) {
+      showToast('Silakan masuk akun santri untuk menyimpan faidah pribadi.', 'warning');
+      return;
+    }
     const id = document.getElementById('faidahId').value;
     const judul = document.getElementById('faidahJudul').value.trim();
     const kategori = document.getElementById('faidahKategori').value;
@@ -284,7 +347,7 @@
 
     const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
 
-    let list = getUserData('faidah', session.userId);
+    let list = getFaidahList();
 
     if (id) {
       // Edit
@@ -312,33 +375,41 @@
       showToast('Faidah baru berhasil dicatat!', 'success');
     }
 
-    saveUserData('faidah', session.userId, list);
+    saveFaidahList(list);
     closeModal('faidahModal');
     renderFaidah();
   }
 
   function deleteFaidah(id) {
+    if (!session) {
+      showToast('Silakan masuk akun santri untuk mengelola faidah.', 'warning');
+      return;
+    }
     if (!confirm('Yakin ingin menghapus catatan faidah ini?')) return;
-    let list = getUserData('faidah', session.userId);
+    let list = getFaidahList();
     list = list.filter(f => f.id !== id);
-    saveUserData('faidah', session.userId, list);
+    saveFaidahList(list);
     showToast('Faidah telah dihapus.', 'info');
     renderFaidah();
   }
 
   function togglePin(id) {
-    let list = getUserData('faidah', session.userId);
+    if (!session) {
+      showToast('Silakan masuk akun santri untuk menandai favorit ⭐', 'info');
+      return;
+    }
+    let list = getFaidahList();
     const item = list.find(f => f.id === id);
     if (item) {
       item.isPinned = !item.isPinned;
-      saveUserData('faidah', session.userId, list);
+      saveFaidahList(list);
       showToast(item.isPinned ? 'Faidah disematkan di atas ⭐' : 'Sematkan dilepas', 'success');
       renderFaidah();
     }
   }
 
   function copyFaidah(id) {
-    const list = getUserData('faidah', session.userId);
+    const list = getFaidahList();
     const item = list.find(f => f.id === id);
     if (!item) return;
 
@@ -356,7 +427,7 @@
   }
 
   function renderFaidah() {
-    const list = getUserData('faidah', session.userId);
+    const list = getFaidahList();
     const search = document.getElementById('searchInput').value.toLowerCase();
     const category = document.getElementById('categoryFilter').value;
 

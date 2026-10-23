@@ -55,6 +55,17 @@
   </div>
 
   <div class="content-area">
+    <!-- Guest Notice Banner (Shown if not logged in) -->
+    <div id="guestBelajarBanner" style="display:none;background:rgba(201,162,39,0.12);border-left:4px solid var(--gold);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-weight:700;color:var(--primary-dark);font-size:0.95rem;">🏫 Mode Jelajah Kelas & Halaqah Belajar (مشكاة)</div>
+          <div style="font-size:0.83rem;color:var(--text-muted);margin-top:2px;">Anda dapat melihat daftar kelas kajian, ruang halaqah, dan forum santri aktif. Masuk akun untuk bergabung ke kelas atau membuka majelis baru.</div>
+        </div>
+        <a href="index.html#authHub" class="btn btn-primary btn-sm" style="background:var(--gold);color:#0d3d25;font-weight:700;">🔐 Masuk / Daftar Santri</a>
+      </div>
+    </div>
+
     <!-- Quote -->
     <div class="quote-block mb-3">
       <div class="quote-arabic">وَتَعَاوَنُوا عَلَى الْبِرِّ وَالتَّقْوَىٰ</div>
@@ -292,12 +303,32 @@
 
 <script src="assets/js/app.js"></script>
 <script>
-  requireAuth();
+  // Guest-friendly access: Allowed to browse classes and discussions without logging in!
   const session = getSession();
 
   document.getElementById('hijriDate').textContent = getHijriDate();
   document.getElementById('miladiDate').textContent = getMiladiDate();
-  initSidebar();
+
+  if (session) {
+    initSidebar();
+  } else {
+    // Guest Mode UI adjustments
+    const banner = document.getElementById('guestBelajarBanner');
+    if (banner) banner.style.display = 'block';
+
+    const userInfoEl = document.getElementById('userInfo');
+    if (userInfoEl) {
+      userInfoEl.innerHTML = `
+        <div style="font-size:0.85rem;font-weight:600;color:var(--primary-dark);">👤 Mode Tamu</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Jelajah Kelas</div>
+      `;
+    }
+    const logoutBtn = document.querySelector('.btn-logout');
+    if (logoutBtn) {
+      logoutBtn.innerHTML = '🔐 Masuk Akun';
+      logoutBtn.onclick = () => window.location.href = 'index.html#authHub';
+    }
+  }
 
   // Tab switching
   function switchHalaqahTab(tab) {
@@ -345,7 +376,7 @@
           link: 'https://meet.google.com/misykah-nahwu',
           creatorName: 'Ustadz Daffa',
           creatorId: 'adm_1',
-          anggota: ['Ustadz Daffa', 'Ahmad Ridwan', session.name]
+          anggota: ['Ustadz Daffa', 'Ahmad Ridwan', session ? session.name : 'Santri']
         },
         {
           id: 'cls_2',
@@ -366,6 +397,11 @@
 
   // ── KELAS METHODS ──
   function openNewKelasModal() {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk membuat kelas baru 🏫', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     document.getElementById('kelasNama').value = '';
     document.getElementById('kelasPemateri').value = '';
     document.getElementById('kelasKode').value = '';
@@ -374,12 +410,21 @@
   }
 
   function openJoinKelasModal() {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk bergabung ke kelas 🔑', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     document.getElementById('inputKodeAkses').value = '';
     openModal('joinKelasModal');
   }
 
   function handleCreateKelas(e) {
     e.preventDefault();
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
+      return;
+    }
     const nama = document.getElementById('kelasNama').value.trim();
     const pemateri = document.getElementById('kelasPemateri').value.trim();
     const kode = document.getElementById('kelasKode').value.trim().toUpperCase();
@@ -410,6 +455,10 @@
 
   function handleJoinByCode(e) {
     e.preventDefault();
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
+      return;
+    }
     const kodeInput = document.getElementById('inputKodeAkses').value.trim().toUpperCase();
     let list = getGlobalData('classes');
     const targetKelas = list.find(k => k.kode === kodeInput);
@@ -433,6 +482,11 @@
   }
 
   function joinDirectKelas(id) {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk bergabung ke kelas 🏫', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     let list = getGlobalData('classes');
     const target = list.find(x => x.id === id);
     if (target && !target.anggota.includes(session.name)) {
@@ -482,7 +536,7 @@
     }
 
     grid.innerHTML = list.map(k => {
-      const isMember = k.anggota && k.anggota.includes(session.name);
+      const isMember = session && k.anggota && k.anggota.includes(session.name);
       const safeLink = k.link && /^https?:\/\//i.test(k.link.trim()) ? escapeHtml(k.link.trim()) : '';
       return `
         <div class="halaqah-card">
@@ -520,6 +574,11 @@
 
   // ── HALAQAH METHODS ──
   function openNewHalaqahModal() {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk membuat halaqah 🕌', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     document.getElementById('halaqahJudul').value = '';
     document.getElementById('halaqahMateri').value = '';
     document.getElementById('halaqahWaktu').value = '';
@@ -531,6 +590,10 @@
 
   function handleCreateHalaqah(e) {
     e.preventDefault();
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
+      return;
+    }
     const judul = document.getElementById('halaqahJudul').value.trim();
     const materi = document.getElementById('halaqahMateri').value.trim();
     const waktu = document.getElementById('halaqahWaktu').value.trim();
@@ -554,6 +617,11 @@
   }
 
   function toggleJoinHalaqah(id) {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk bergabung ke halaqah 🕌', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     let list = getGlobalData('halaqah_rooms');
     const h = list.find(x => x.id === id);
     if (!h) return;
@@ -607,7 +675,7 @@
     }
 
     grid.innerHTML = list.map(h => {
-      const isJoined = h.participants.includes(session.name);
+      const isJoined = session && h.participants && h.participants.includes(session.name);
       const statusLabel = h.status === 'ongoing' ? 'Sedang Berlangsung' : h.status === 'done' ? 'Selesai' : 'Akan Datang';
       const statusClass = h.status === 'ongoing' ? 'status-ongoing' : h.status === 'done' ? 'status-done' : 'status-upcoming';
 
@@ -646,6 +714,11 @@
 
   // ── TASMI' METHODS ──
   function openNewTasmiModal() {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk mencari partner tasmi\' 🎧', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     document.getElementById('tasmiMateri').value = '';
     document.getElementById('tasmiWaktu').value = '';
     document.getElementById('tasmiCatatan').value = '';
@@ -654,6 +727,10 @@
 
   function handleCreateTasmi(e) {
     e.preventDefault();
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
+      return;
+    }
     const materi = document.getElementById('tasmiMateri').value.trim();
     const waktu = document.getElementById('tasmiWaktu').value.trim();
     const catatan = document.getElementById('tasmiCatatan').value.trim();
@@ -674,6 +751,11 @@
   }
 
   function acceptTasmi(id) {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk menyimak tasmi\' 🤝', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     let list = getGlobalData('tasmi_requests');
     const t = list.find(x => x.id === id);
     if (!t) return;
@@ -746,6 +828,11 @@
 
   // ── FORUM METHODS ──
   function openNewQuestionModal() {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk bertanya di forum 💬', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     document.getElementById('forumTopik').value = '';
     document.getElementById('forumPertanyaan').value = '';
     openModal('forumModal');
@@ -753,6 +840,10 @@
 
   function handleCreateQuestion(e) {
     e.preventDefault();
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
+      return;
+    }
     const topik = document.getElementById('forumTopik').value.trim();
     const pertanyaan = document.getElementById('forumPertanyaan').value.trim();
 
@@ -773,6 +864,11 @@
   }
 
   function submitAnswer(questionId) {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk menjawab 💡', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
     const input = document.getElementById(`replyInput_${questionId}`);
     if (!input) return;
     const text = input.value.trim();
