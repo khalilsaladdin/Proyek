@@ -437,6 +437,24 @@ const MisykahCloud = {
       return !error;
     },
 
+    async complete(id) {
+      const client = initSupabaseClient();
+      if (!client) {
+        let local = getGlobalData('tasmi_requests');
+        const t = local.find(x => x.id === id);
+        if (t) {
+          t.status = 'completed';
+          saveGlobalData('tasmi_requests', local);
+        }
+        return true;
+      }
+      const { error } = await client
+        .from('tasmi_requests')
+        .update({ status: 'completed' })
+        .eq('id', id);
+      return !error;
+    },
+
     async delete(id) {
       const client = initSupabaseClient();
       if (!client) {

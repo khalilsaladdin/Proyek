@@ -351,14 +351,19 @@
   if (todayItems.length > 0) {
     const pct = Math.round((selesaiCount / todayItems.length) * 100);
     scheduleEl.innerHTML = todayItems.slice(0, 4).map(m => `
-      <div class="murojaah-item ${m.status}" style="margin-bottom:8px;">
-        <div class="murojaah-info">
-          <div class="murojaah-materi" style="font-size:0.88rem;">${escapeHtml(m.materi)}</div>
+      <div class="murojaah-item ${m.status}" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div class="murojaah-info" style="flex:1;min-width:0;">
+          <div class="murojaah-materi" style="font-size:0.88rem;${m.status==='selesai'?'text-decoration:line-through;color:var(--text-muted);':''}">${escapeHtml(m.materi)}</div>
           <div class="murojaah-meta">
             <span>⏰ ${escapeHtml(m.waktu)}</span>
-            <span class="badge badge-${m.status==='selesai'?'success':m.status==='terlewat'?'danger':'warning'}">${escapeHtml(m.status)}</span>
+            <span class="badge badge-${m.status==='selesai'?'success':m.status==='terlewat'?'danger':'warning'}">${m.status==='selesai'?'✅ Selesai':m.status==='terlewat'?'❌ Terlewat':'⏳ Belum'}</span>
           </div>
         </div>
+        <button class="btn btn-sm ${m.status==='selesai'?'btn-outline':'btn-primary'}" 
+                onclick="toggleDashboardStatus('${m.id}')" 
+                style="padding:5px 10px;font-size:0.75rem;font-weight:600;white-space:nowrap;${m.status==='selesai'?'border-color:#388e3c;color:#1b5e20;background:rgba(76,175,80,0.08);':''}">
+          ${m.status==='selesai' ? '✅ Selesai' : '⚪ Selesaikan'}
+        </button>
       </div>`).join('');
     if (todayItems.length > 4) {
       scheduleEl.innerHTML += `<p style="font-size:0.8rem;color:var(--text-muted);text-align:center;">+${todayItems.length - 4} lainnya</p>`;
@@ -366,6 +371,23 @@
     progressEl.classList.remove('d-none');
     progFill.style.width = pct + '%';
     progText.textContent = pct + '%';
+  }
+
+  function toggleDashboardStatus(id) {
+    const list = getUserData('murojaah', session.userId);
+    const item = list.find(m => m.id === id);
+    if (!item) return;
+
+    if (item.status === 'selesai') {
+      item.status = 'belum';
+      saveUserData('murojaah', session.userId, list);
+      showToast('Status tugas dikembalikan ke Belum Selesai ⏳', 'info');
+    } else {
+      item.status = 'selesai';
+      saveUserData('murojaah', session.userId, list);
+      showToast('Alhamdulillah! Tugas dinyatakan selesai ✅🎉', 'success');
+    }
+    setTimeout(() => window.location.reload(), 350);
   }
 
   // Daily quote

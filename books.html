@@ -13,9 +13,83 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
-    .pdf-modal { max-width: 95vw; width: 900px; max-height: 95vh; }
-    .pdf-frame { width: 100%; height: 75vh; border: none; border-radius: var(--border-radius-sm); background: #f0f0f0; }
+    .pdf-modal {
+      max-width: 96vw;
+      width: 920px;
+      max-height: 96vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+      background: #fff;
+    }
+    .pdf-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--cream-dark);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .pdf-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #fcfbf7;
+      border-bottom: 1px solid var(--cream-dark);
+    }
+    .pdf-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .pdf-viewer-container {
+      width: 100%;
+      height: 72vh;
+      overflow: auto;
+      background: #474a4d;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px 8px;
+      position: relative;
+      -webkit-overflow-scrolling: touch;
+    }
+    #pdfCanvas {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      background: #fff;
+      max-width: 100%;
+      height: auto !important;
+      display: block;
+      margin: 0 auto;
+    }
+    @media (max-width: 600px) {
+      .pdf-modal {
+        width: 100vw;
+        max-width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+      }
+      .pdf-header {
+        padding: 10px 14px;
+      }
+      .pdf-viewer-container {
+        height: calc(100vh - 120px);
+        padding: 6px 2px;
+      }
+      .pdf-toolbar {
+        padding: 6px 10px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -146,15 +220,53 @@
   </div>
 </div>
 
-<!-- Modal Baca PDF -->
+<!-- Modal Baca PDF Ponsel & Desktop -->
 <div class="modal-overlay" id="modalBaca">
   <div class="modal pdf-modal">
-    <div class="modal-header">
-      <div class="modal-title" id="pdfTitle">📖 Membaca Buku</div>
-      <button class="modal-close" onclick="tutupPDF()">✕</button>
+    <div class="pdf-header">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+        <span style="font-size:1.4rem;">📖</span>
+        <div style="min-width:0;flex:1;">
+          <div class="modal-title" id="pdfTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:1.05rem;font-weight:700;color:var(--primary-dark);">Membaca Buku</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="pdfSubtitle">Penampil Kitab Digital Santri (مشكاة)</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <button id="btnOpenMobile" class="btn btn-outline btn-sm" onclick="openPdfInExternalTab()" title="Buka langsung di aplikasi PDF / tab baru browser ponsel">
+          📱 Buka di Ponsel
+        </button>
+        <a id="btnDownloadPdf" class="btn btn-primary btn-sm" download="kitab-misykah.pdf" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Unduh file PDF">
+          ⬇️ Unduh
+        </a>
+        <button class="modal-close" onclick="tutupPDF()" style="margin-left:4px;font-size:1.3rem;">✕</button>
+      </div>
     </div>
-    <div class="modal-body" style="padding:16px;">
-      <iframe id="pdfFrame" class="pdf-frame" title="PDF Viewer"></iframe>
+
+    <!-- Toolbar Navigasi Halaman & Zoom -->
+    <div class="pdf-toolbar">
+      <div class="pdf-controls">
+        <button class="btn btn-outline btn-sm" onclick="prevPage()" id="btnPrevPage" style="padding:4px 10px;">◀ Sebelumnya</button>
+        <span style="font-size:0.85rem;font-weight:600;min-width:105px;text-align:center;">
+          Hal <span id="pageNum">1</span> / <span id="pageCount">...</span>
+        </span>
+        <button class="btn btn-outline btn-sm" onclick="nextPage()" id="btnNextPage" style="padding:4px 10px;">Berikutnya ▶</button>
+      </div>
+
+      <div class="pdf-controls">
+        <button class="btn btn-outline btn-sm" onclick="zoomPdf(-0.2)" title="Perkecil Halaman" style="padding:4px 8px;">🔍 -</button>
+        <span id="zoomLevel" style="font-size:0.8rem;color:var(--text-muted);min-width:40px;text-align:center;">100%</span>
+        <button class="btn btn-outline btn-sm" onclick="zoomPdf(0.2)" title="Perbesar Halaman" style="padding:4px 8px;">🔍 +</button>
+        <button class="btn btn-outline btn-sm" onclick="fitWidthPdf()" title="Sesuaikan dengan Lebar Layar Ponsel" style="padding:4px 8px;">↔️ Pas Layar</button>
+      </div>
+    </div>
+
+    <!-- Canvas Container -->
+    <div class="pdf-viewer-container" id="pdfViewerContainer">
+      <div id="pdfLoadingSpinner" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;background:rgba(0,0,0,0.7);padding:18px 24px;border-radius:10px;">
+        <div class="loader" style="width:32px;height:32px;border-width:3px;margin:0 auto 8px;border-color:#fff;border-top-color:var(--gold);"></div>
+        <div style="font-size:0.85rem;">Memuat Halaman...</div>
+      </div>
+      <canvas id="pdfCanvas"></canvas>
     </div>
   </div>
 </div>
@@ -255,12 +367,105 @@
     selectedFileObj = null;
   }
 
+  // ── PDF.JS ENGINE UNTUK PONSEL & DESKTOP ──────────────────────
   let currentBlobUrl = null;
+  let pdfDoc = null;
+  let pageNum = 1;
+  let pageRendering = false;
+  let pageNumPending = null;
+  let pdfScale = 1.0;
+
+  async function renderPdfPage(num) {
+    if (!pdfDoc) return;
+    pageRendering = true;
+    const spinner = document.getElementById('pdfLoadingSpinner');
+    if (spinner) spinner.style.display = 'block';
+
+    try {
+      const page = await pdfDoc.getPage(num);
+      const canvas = document.getElementById('pdfCanvas');
+      const ctx = canvas.getContext('2d');
+      const viewport = page.getViewport({ scale: pdfScale });
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: ctx,
+        viewport: viewport
+      };
+
+      const renderTask = page.render(renderContext);
+      await renderTask.promise;
+    } catch (e) {
+      console.warn('PDF page render notice:', e);
+    } finally {
+      pageRendering = false;
+      if (spinner) spinner.style.display = 'none';
+      if (pageNumPending !== null) {
+        renderPdfPage(pageNumPending);
+        pageNumPending = null;
+      }
+    }
+
+    document.getElementById('pageNum').textContent = num;
+    document.getElementById('zoomLevel').textContent = Math.round(pdfScale * 100) + '%';
+    const prevBtn = document.getElementById('btnPrevPage');
+    const nextBtn = document.getElementById('btnNextPage');
+    if (prevBtn) prevBtn.disabled = num <= 1;
+    if (nextBtn) nextBtn.disabled = num >= pdfDoc.numPages;
+  }
+
+  function queueRenderPage(num) {
+    if (pageRendering) {
+      pageNumPending = num;
+    } else {
+      renderPdfPage(num);
+    }
+  }
+
+  function prevPage() {
+    if (pageNum <= 1) return;
+    pageNum--;
+    queueRenderPage(pageNum);
+  }
+
+  function nextPage() {
+    if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+    pageNum++;
+    queueRenderPage(pageNum);
+  }
+
+  function zoomPdf(delta) {
+    pdfScale = Math.max(0.4, Math.min(3.0, pdfScale + delta));
+    queueRenderPage(pageNum);
+  }
+
+  async function fitWidthPdf() {
+    if (!pdfDoc) return;
+    try {
+      const container = document.getElementById('pdfViewerContainer');
+      const containerWidth = Math.max(280, (container.clientWidth || window.innerWidth) - 24);
+      const page = await pdfDoc.getPage(pageNum);
+      const defaultViewport = page.getViewport({ scale: 1.0 });
+      pdfScale = containerWidth / defaultViewport.width;
+      queueRenderPage(pageNum);
+    } catch(e) {}
+  }
+
+  function openPdfInExternalTab() {
+    if (currentBlobUrl) {
+      window.open(currentBlobUrl, '_blank');
+    } else {
+      showToast('File PDF belum siap.', 'warning');
+    }
+  }
 
   async function bacaBuku(id) {
     const item = getData().find(b => b.id === id);
     if (!item) return;
-    document.getElementById('pdfTitle').textContent = '📖 ' + item.judul;
+    document.getElementById('pdfTitle').textContent = item.judul;
+    document.getElementById('pdfSubtitle').textContent = `✍️ ${item.penulis || 'Ulama'} • ${item.kategori}`;
 
     if (currentBlobUrl) {
       URL.revokeObjectURL(currentBlobUrl);
@@ -288,17 +493,56 @@
       }
 
       currentBlobUrl = url;
-      document.getElementById('pdfFrame').src = currentBlobUrl;
+
+      // Setup tombol unduh
+      const dlBtn = document.getElementById('btnDownloadPdf');
+      dlBtn.href = currentBlobUrl;
+      const cleanName = (item.judul || 'kitab').replace(/[^a-zA-Z0-9_\u0600-\u06FF]/g, '_');
+      dlBtn.download = cleanName + '.pdf';
+
       openModal('modalBaca');
+
+      // Inisialisasi PDF.js Engine
+      if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const spinner = document.getElementById('pdfLoadingSpinner');
+        if (spinner) spinner.style.display = 'block';
+
+        const loadingTask = pdfjsLib.getDocument(currentBlobUrl);
+        pdfDoc = await loadingTask.promise;
+        document.getElementById('pageCount').textContent = pdfDoc.numPages;
+        pageNum = 1;
+
+        // Otomatis sesuaikan skala ke lebar layar perangkat santri
+        const container = document.getElementById('pdfViewerContainer');
+        const containerWidth = Math.max(280, (container.clientWidth || window.innerWidth) - 24);
+        const page1 = await pdfDoc.getPage(1);
+        const defaultViewport = page1.getViewport({ scale: 1.0 });
+        pdfScale = Math.min(1.6, Math.max(0.6, containerWidth / defaultViewport.width));
+
+        renderPdfPage(pageNum);
+      } else {
+        // Fallback jika CDN lambat/offline
+        openPdfInExternalTab();
+      }
     } catch (e) {
       console.error(e);
-      showToast('Gagal memuat PDF dari database browser.', 'error');
+      showToast('Membuka PDF di tab baru peramban...', 'info');
+      if (currentBlobUrl) {
+        window.open(currentBlobUrl, '_blank');
+      }
     }
   }
 
   function tutupPDF() {
     closeModal('modalBaca');
-    document.getElementById('pdfFrame').src = '';
+    pdfDoc = null;
+    pageNum = 1;
+    const canvas = document.getElementById('pdfCanvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
     if (currentBlobUrl) {
       URL.revokeObjectURL(currentBlobUrl);
       currentBlobUrl = null;

@@ -758,6 +758,16 @@
     renderTasmi();
   }
 
+  async function selesaikanTasmi(id) {
+    if (!session) {
+      showToast('Silakan masuk akun santri.', 'warning');
+      return;
+    }
+    await MisykahCloud.tasmi.complete(id);
+    showToast('Alhamdulillah! Tugas setoran tasmi\' telah dinyatakan selesai ✅🎉', 'success');
+    renderTasmi();
+  }
+
   async function deleteTasmi(id) {
     if (!confirm('Yakin ingin menghapus permintaan partner tasmi ini?')) return;
     await MisykahCloud.tasmi.delete(id);
@@ -780,12 +790,18 @@
       return;
     }
 
-    grid.innerHTML = list.map(t => `
+    grid.innerHTML = list.map(t => {
+      const isMatched = t.status === 'matched';
+      const isCompleted = t.status === 'completed';
+      const isMyTasmi = session && (t.requesterName === session.name || (t.requesterId && t.requesterId === session.userId));
+      const isPartner = session && t.partnerName === session.name;
+
+      return `
       <div class="halaqah-card">
         <div>
           <div class="flex items-center justify-between mb-2">
-            <span class="badge ${t.status === 'matched' ? 'badge-success' : 'badge-warning'}">
-              ${t.status === 'matched' ? '✓ Sudah Ada Partner' : '⏳ Mencari Teman'}
+            <span class="badge ${isCompleted ? 'badge-success' : isMatched ? 'badge-primary' : 'badge-warning'}">
+              ${isCompleted ? '✅ Setoran Selesai' : isMatched ? '✓ Disimak Partner' : '⏳ Mencari Teman'}
             </span>
             <span style="font-size:0.75rem;color:var(--text-muted);">👤 ${escapeHtml(t.requesterName)}</span>
           </div>
@@ -796,11 +812,20 @@
           </div>
         </div>
 
-        <div class="mt-auto" style="border-top:1px solid var(--cream-dark);padding-top:12px;display:flex;gap:8px;align-items:center;">
-          ${t.status === 'matched' ? `
+        <div class="mt-auto" style="border-top:1px solid var(--cream-dark);padding-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          ${isCompleted ? `
+            <div style="font-size:0.82rem;color:#1b5e20;font-weight:600;flex:1;">
+              🎉 Selesai disimak oleh: <strong>${escapeHtml(t.partnerName || 'Partner')}</strong>
+            </div>
+          ` : isMatched ? `
             <div style="font-size:0.82rem;color:var(--primary);font-weight:600;flex:1;">
               ✨ Disimak oleh: <strong>${escapeHtml(t.partnerName)}</strong>
             </div>
+            ${(isMyTasmi || isPartner) ? `
+              <button class="btn btn-success btn-sm" onclick="selesaikanTasmi('${t.id}')" title="Nyatakan setoran tugas hafalan ini sudah selesai disimak">
+                ✅ Sudah Selesai
+              </button>
+            ` : ''}
           ` : `
             <button class="btn btn-primary btn-sm" style="flex:1;" onclick="acceptTasmi('${t.id}')">
               🤝 Siap Menyimak
@@ -808,8 +833,8 @@
           `}
           <button class="btn btn-danger btn-sm" onclick="deleteTasmi('${t.id}')" title="Hapus Permintaan">🗑️</button>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
 
   // ── FORUM METHODS ──

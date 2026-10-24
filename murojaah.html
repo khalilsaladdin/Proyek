@@ -366,7 +366,7 @@
     el.innerHTML = filtered.map(m => `
       <div class="murojaah-item ${m.status}">
         <div class="murojaah-info">
-          <div class="murojaah-materi">${escapeHtml(m.materi)}</div>
+          <div class="murojaah-materi" style="${m.status === 'selesai' ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${escapeHtml(m.materi)}</div>
           <div class="murojaah-meta">
             <span>${waktuIkon[m.waktu]||'⏰'} ${escapeHtml(m.waktu)}</span>
             <span>📅 ${formatDate(m.jadwal)}</span>
@@ -375,18 +375,41 @@
           </div>
           ${m.catatan ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">📝 ${escapeHtml(m.catatan)}</div>` : ''}
         </div>
-        <div class="murojaah-actions">
-          ${m.status !== 'selesai' ? `<button class="btn btn-sm btn-outline" onclick="tandaiSelesai('${m.id}')" title="Tandai Selesai">✅</button>` : ''}
-          <button class="btn btn-sm btn-outline-gold" onclick="editItem('${m.id}')" title="Edit">✏️</button>
-          <button class="btn btn-sm btn-danger" onclick="hapus('${m.id}')" title="Hapus">🗑</button>
+        <div class="murojaah-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <!-- Tombol Nyatakan Sudah Selesai -->
+          <button class="btn btn-sm ${m.status === 'selesai' ? 'btn-outline' : 'btn-primary'}" 
+                  onclick="toggleSelesai('${m.id}')" 
+                  title="${m.status === 'selesai' ? 'Klik untuk membatalkan (ubah kembali ke belum selesai)' : 'Klik untuk menyatakan tugas/murojaah ini sudah selesai'}"
+                  style="display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 12px;border-radius:6px;${m.status === 'selesai' ? 'border-color:#388e3c;color:#1b5e20;background:rgba(76,175,80,0.1);' : ''}">
+            <span style="font-size:0.95rem;">${m.status === 'selesai' ? '✅' : '⚪'}</span>
+            <span>${m.status === 'selesai' ? 'Sudah Selesai' : 'Tandai Selesai'}</span>
+          </button>
+
+          <button class="btn btn-sm btn-outline-gold" onclick="editItem('${m.id}')" title="Edit Jadwal">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="hapus('${m.id}')" title="Hapus Jadwal">🗑</button>
         </div>
       </div>`).join('');
   }
 
-  function tandaiSelesai(id) {
+  function toggleSelesai(id) {
     const data = getData();
     const item = data.find(m => m.id === id);
-    if (item) { item.status = 'selesai'; saveData(data); showToast('Murojaah ditandai selesai! 🎉', 'success'); refresh(); }
+    if (!item) return;
+
+    if (item.status === 'selesai') {
+      item.status = 'belum';
+      saveData(data);
+      showToast('Status tugas dikembalikan ke Belum Selesai ⏳', 'info');
+    } else {
+      item.status = 'selesai';
+      saveData(data);
+      showToast('Alhamdulillah! Tugas murojaah dinyatakan Selesai ✅🎉', 'success');
+    }
+    refresh();
+  }
+
+  function tandaiSelesai(id) {
+    toggleSelesai(id);
   }
 
   function hapus(id) {

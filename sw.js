@@ -3,7 +3,7 @@
 // Offline First Cache & Asset Management
 // ============================================================
 
-const CACHE_NAME = 'misykah-v1.4.0';
+const CACHE_NAME = 'misykah-v1.5.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
