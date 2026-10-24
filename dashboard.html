@@ -279,20 +279,41 @@
   const targetKey = `misykah_target_${session.userId}`;
   const target = JSON.parse(localStorage.getItem(targetKey) || 'null');
   const now = new Date();
-  if (target && target.month === now.getMonth() && target.year === now.getFullYear()) {
-    const banner = document.getElementById('targetBanner');
-    if (banner) {
-      banner.style.display = 'block';
-      document.getElementById('dbTargetName').textContent = target.name;
-      const selesaiBulanIni = murojaahData.filter(m => {
-        if (m.status !== 'selesai') return false;
+  const today = todayStr();
+  const banner = document.getElementById('targetBanner');
+  if (banner) {
+    banner.style.display = 'block';
+    const targetName = target ? target.name : 'Target Hafalan Bulan Ini';
+    const targetTotal = target ? target.count : 30;
+    document.getElementById('dbTargetName').textContent = targetName;
+
+    const selesaiDates = new Set();
+    murojaahData.forEach(m => {
+      if (m.status === 'selesai' && m.jadwal) {
         const d = new Date(m.jadwal);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      }).length;
-      const pct = Math.min(100, Math.round((selesaiBulanIni / target.count) * 100));
-      document.getElementById('dbTargetProgress').textContent = `${selesaiBulanIni}/${target.count} Selesai (${pct}%)`;
-      document.getElementById('dbTargetFill').style.width = pct + '%';
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          selesaiDates.add(m.jadwal);
+        }
+      }
+    });
+    if (target && Array.isArray(target.checkins)) {
+      target.checkins.forEach(ds => {
+        const d = new Date(ds);
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          selesaiDates.add(ds);
+        }
+      });
     }
+
+    const totalTercapai = selesaiDates.size;
+    const isTodayAchieved = selesaiDates.has(today);
+    const pct = Math.min(100, Math.round((totalTercapai / targetTotal) * 100));
+
+    document.getElementById('dbTargetProgress').innerHTML = `
+      <span style="font-size:0.75rem;background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:12px;margin-right:6px;">${isTodayAchieved ? '✅ Hari Ini Tercapai' : '⏳ Hari Ini Belum'}</span>
+      <span>${totalTercapai}/${targetTotal} Selesai (${pct}%)</span>
+    `;
+    document.getElementById('dbTargetFill').style.width = pct + '%';
   }
 
   // Featured Faidah

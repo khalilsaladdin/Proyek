@@ -78,26 +78,47 @@
       </div>
     </div>
 
-    <!-- Monthly Target -->
+    <!-- Monthly Target with Daily Check-in -->
     <div class="target-card mb-3" id="targetCard">
-      <div class="flex items-center justify-between" style="position:relative;z-index:1;">
+      <div class="flex items-center justify-between flex-wrap gap-2" style="position:relative;z-index:1;">
         <div>
           <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold-light);font-weight:600;">🎯 Target Hafalan Bulan Ini</div>
-          <div style="font-size:1.6rem;font-weight:700;margin-top:4px;" id="targetTitle">Belum diatur</div>
+          <div style="font-size:1.5rem;font-weight:700;margin-top:4px;" id="targetTitle">Target Hafalan</div>
         </div>
-        <button onclick="openModal('modalTarget')" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:7px 14px;font-size:0.8rem;cursor:pointer;">
+        <button onclick="openModal('modalTarget')" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);color:#fff;border-radius:8px;padding:6px 14px;font-size:0.8rem;cursor:pointer;">
           ✏️ Atur Target
         </button>
       </div>
-      <div style="display:flex;gap:24px;margin-top:14px;font-size:0.85rem;position:relative;z-index:1;">
-        <div><span style="color:var(--gold-light);">✅ Tercapai:</span> <strong id="targetDone">0</strong></div>
-        <div><span style="color:rgba(255,255,255,0.7);">🎯 Target:</span> <strong id="targetTotal">0</strong> sesi</div>
-        <div><span style="color:rgba(255,255,255,0.7);">📅 Sisa Hari:</span> <strong id="targetDaysLeft">0</strong></div>
+
+      <!-- KOTAK CHECK-IN TARGET HARI INI -->
+      <div id="dailyTargetBox" style="margin-top:14px;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:relative;z-index:1;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:1.8rem;" id="dailyTargetIcon">⚪</span>
+          <div>
+            <div style="font-size:0.9rem;font-weight:700;color:#fff;" id="dailyTargetHeading">Target Hafalan Hari Ini</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.85);margin-top:2px;" id="dailyTargetDesc">Apakah target murojaah hari ini sudah tercapai?</div>
+          </div>
+        </div>
+        <button id="btnDailyTarget" onclick="toggleDailyTargetToday()" 
+                style="background:#fff;color:var(--primary-dark);font-weight:700;font-size:0.82rem;padding:8px 16px;border-radius:20px;border:none;box-shadow:0 3px 10px rgba(0,0,0,0.2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;">
+          <span id="btnDailyTargetIcon">⚪</span>
+          <span id="btnDailyTargetText">Tandai Target Tercapai</span>
+        </button>
       </div>
-      <div class="target-progress-bar">
+
+      <div style="display:flex;gap:20px;margin-top:14px;font-size:0.85rem;position:relative;z-index:1;flex-wrap:wrap;">
+        <div><span style="color:var(--gold-light);">✅ Total Tercapai:</span> <strong id="targetDone">0</strong> hari / sesi</div>
+        <div><span style="color:rgba(255,255,255,0.7);">🎯 Target:</span> <strong id="targetTotal">0</strong> sesi</div>
+        <div><span style="color:rgba(255,255,255,0.7);">📅 Sisa Hari:</span> <strong id="targetDaysLeft">0</strong> hari</div>
+        <div><span style="color:rgba(255,255,255,0.7);">🔥 Beruntun:</span> <strong id="targetStreak">0</strong> hari</div>
+      </div>
+      <div class="target-progress-bar" style="margin-top:12px;">
         <div class="target-progress-fill" id="targetFill" style="width:0%"></div>
       </div>
-      <div style="text-align:right;font-size:0.75rem;color:rgba(255,255,255,0.6);margin-top:6px;" id="targetPct">0% tercapai</div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.75rem;color:rgba(255,255,255,0.75);">
+        <span id="targetStatusText">Konsisten murojaah setiap hari</span>
+        <span id="targetPct">0% tercapai</span>
+      </div>
     </div>
 
     <!-- Week Calendar -->
@@ -488,53 +509,169 @@
     const name = document.getElementById('targetName').value.trim() || 'Target Murojaah';
     const count = parseInt(document.getElementById('targetCount').value) || 30;
     const now = new Date();
+    const existing = getTarget() || {};
     setTargetData({
       name,
       count,
       month: now.getMonth(),
-      year: now.getFullYear()
+      year: now.getFullYear(),
+      checkins: Array.isArray(existing.checkins) ? existing.checkins : []
     });
     closeModal('modalTarget');
     showToast('Target bulanan berhasil disimpan! 🎯', 'success');
     updateTarget();
   }
 
+  // ── Tombol Nyatakan Target Hari Ini Tercapai atau Belum ──────
+  function toggleDailyTargetToday() {
+    const now = new Date();
+    const today = todayStr();
+    let target = getTarget();
+    if (!target) {
+      target = {
+        name: 'Target Hafalan',
+        count: 30,
+        month: now.getMonth(),
+        year: now.getFullYear(),
+        checkins: []
+      };
+    }
+    if (!Array.isArray(target.checkins)) {
+      target.checkins = [];
+    }
+
+    const idx = target.checkins.indexOf(today);
+    if (idx !== -1) {
+      target.checkins.splice(idx, 1);
+      setTargetData(target);
+      showToast('Status target hari ini diubah: Belum Tercapai ⏳', 'info');
+    } else {
+      target.checkins.push(today);
+      setTargetData(target);
+      showToast('Masya Allah! Target hafalan hari ini dinyatakan TERCAPAI 🎯🎉', 'success');
+    }
+    updateTarget();
+  }
+
+  function calculateStreak(accomplishedDatesSet) {
+    let streak = 0;
+    const now = new Date();
+    let cur = new Date(now);
+    const today = cur.toISOString().split('T')[0];
+
+    // Mulai cek dari hari ini jika ada, atau kemarin jika hari ini belum selesai
+    if (accomplishedDatesSet.has(today)) {
+      streak++;
+      cur.setDate(cur.getDate() - 1);
+    } else {
+      cur.setDate(cur.getDate() - 1);
+      const yest = cur.toISOString().split('T')[0];
+      if (!accomplishedDatesSet.has(yest)) return 0;
+    }
+
+    while (true) {
+      const ds = cur.toISOString().split('T')[0];
+      if (accomplishedDatesSet.has(ds)) {
+        streak++;
+        cur.setDate(cur.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
   function updateTarget() {
-    const target = getTarget();
+    let target = getTarget();
     const now = new Date();
     const thisMonth = now.getMonth();
     const thisYear = now.getFullYear();
+    const today = todayStr();
 
-    // Count completed sessions this month
+    // Sesi murojaah yang berstatus selesai di bulan ini
     const data = getData();
-    const selesaiBulanIni = data.filter(m => {
-      if (m.status !== 'selesai') return false;
-      const d = new Date(m.jadwal);
-      return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-    }).length;
+    const selesaiDates = new Set();
+    data.forEach(m => {
+      if (m.status === 'selesai' && m.jadwal) {
+        const d = new Date(m.jadwal);
+        if (d.getMonth() === thisMonth && d.getFullYear() === thisYear) {
+          selesaiDates.add(m.jadwal);
+        }
+      }
+    });
 
-    // Days remaining this month
+    // Gabungkan check-in manual target harian dengan jadwal yang diselesaikan
+    const checkins = (target && Array.isArray(target.checkins)) ? target.checkins : [];
+    checkins.forEach(ds => {
+      const d = new Date(ds);
+      if (d.getMonth() === thisMonth && d.getFullYear() === thisYear) {
+        selesaiDates.add(ds);
+      }
+    });
+
+    const totalTercapai = selesaiDates.size;
+    const isTodayAchieved = selesaiDates.has(today);
+
+    // Hitung sisa hari dalam bulan ini
     const lastDay = new Date(thisYear, thisMonth + 1, 0).getDate();
-    const daysLeft = lastDay - now.getDate();
+    const daysLeft = Math.max(0, lastDay - now.getDate());
+
+    // Hitung streak beruntun
+    const streak = calculateStreak(selesaiDates);
+    const streakEl = document.getElementById('targetStreak');
+    if (streakEl) streakEl.textContent = streak;
+
+    // Perbarui Tampilan Tombol Target Hari Ini
+    const iconEl = document.getElementById('dailyTargetIcon');
+    const headingEl = document.getElementById('dailyTargetHeading');
+    const descEl = document.getElementById('dailyTargetDesc');
+    const btnEl = document.getElementById('btnDailyTarget');
+    const btnIconEl = document.getElementById('btnDailyTargetIcon');
+    const btnTextEl = document.getElementById('btnDailyTargetText');
+
+    if (isTodayAchieved) {
+      if (iconEl) iconEl.textContent = '✅';
+      if (headingEl) headingEl.textContent = 'Target Hari Ini Tercapai! 🎉';
+      if (descEl) descEl.textContent = 'Alhamdulillah, Anda telah menuntaskan target hafalan hari ini.';
+      if (btnEl) {
+        btnEl.style.background = '#e8f5e9';
+        btnEl.style.color = '#1b5e20';
+        btnEl.style.border = '2px solid #4caf50';
+      }
+      if (btnIconEl) btnIconEl.textContent = '✅';
+      if (btnTextEl) btnTextEl.textContent = 'Tercapai (Klik jika Batal)';
+    } else {
+      if (iconEl) iconEl.textContent = '⚪';
+      if (headingEl) headingEl.textContent = 'Target Hafalan Hari Ini';
+      if (descEl) descEl.textContent = 'Tekan tombol di samping jika Anda telah menyelesaikan target hari ini.';
+      if (btnEl) {
+        btnEl.style.background = '#ffffff';
+        btnEl.style.color = 'var(--primary-dark)';
+        btnEl.style.border = 'none';
+      }
+      if (btnIconEl) btnIconEl.textContent = '⚪';
+      if (btnTextEl) btnTextEl.textContent = 'Tandai Target Tercapai';
+    }
 
     if (target && target.month === thisMonth && target.year === thisYear) {
       document.getElementById('targetTitle').textContent = target.name;
-      document.getElementById('targetDone').textContent = selesaiBulanIni;
+      document.getElementById('targetDone').textContent = totalTercapai;
       document.getElementById('targetTotal').textContent = target.count;
       document.getElementById('targetDaysLeft').textContent = daysLeft;
-      const pct = Math.min(100, Math.round((selesaiBulanIni / target.count) * 100));
+      const pct = Math.min(100, Math.round((totalTercapai / target.count) * 100));
       document.getElementById('targetFill').style.width = pct + '%';
       document.getElementById('targetPct').textContent = pct + '% tercapai';
       // Pre-fill modal
       document.getElementById('targetName').value = target.name;
       document.getElementById('targetCount').value = target.count;
     } else {
-      document.getElementById('targetTitle').textContent = 'Belum diatur — Atur target bulan ini ✏️';
-      document.getElementById('targetDone').textContent = selesaiBulanIni;
-      document.getElementById('targetTotal').textContent = '-';
+      document.getElementById('targetTitle').textContent = 'Target Hafalan Bulan Ini (30 Sesi)';
+      document.getElementById('targetDone').textContent = totalTercapai;
+      document.getElementById('targetTotal').textContent = '30';
       document.getElementById('targetDaysLeft').textContent = daysLeft;
-      document.getElementById('targetFill').style.width = '0%';
-      document.getElementById('targetPct').textContent = 'Silakan atur target';
+      const pct = Math.min(100, Math.round((totalTercapai / 30) * 100));
+      document.getElementById('targetFill').style.width = pct + '%';
+      document.getElementById('targetPct').textContent = pct + '% tercapai';
     }
   }
 

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="assets/js/pdf.min.js"></script>
   <style>
     .pdf-modal {
       max-width: 96vw;
@@ -385,18 +385,22 @@
       const page = await pdfDoc.getPage(num);
       const canvas = document.getElementById('pdfCanvas');
       const ctx = canvas.getContext('2d');
-      const viewport = page.getViewport({ scale: pdfScale });
 
-      canvas.height = viewport.height;
+      // Dukungan layar ponsel Hi-DPI (Retina / AMOLED) agar teks arab dan latin sangat tajam
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const viewport = page.getViewport({ scale: pdfScale * dpr });
+
       canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.width = (viewport.width / dpr) + 'px';
+      canvas.style.height = (viewport.height / dpr) + 'px';
 
       const renderContext = {
         canvasContext: ctx,
         viewport: viewport
       };
 
-      const renderTask = page.render(renderContext);
-      await renderTask.promise;
+      await page.render(renderContext).promise;
     } catch (e) {
       console.warn('PDF page render notice:', e);
     } finally {
@@ -473,26 +477,25 @@
     }
 
     try {
-      // Read on demand from IndexedDB as Blob URL
-      let url = await MisykahDB.getFileUrl(id);
+      // 1. Ambil file Blob langsung dari IndexedDB
+      let blob = await MisykahDB.getFile(id);
 
-      // Fallback for legacy base64 if existing
-      if (!url && item.fileData) {
+      // 2. Fallback legacy base64 jika ada
+      if (!blob && item.fileData) {
         const base64 = item.fileData.split(',')[1];
         const byteChars = atob(base64);
         const byteNums = new Array(byteChars.length);
         for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
         const byteArr = new Uint8Array(byteNums);
-        const blob = new Blob([byteArr], { type: 'application/pdf' });
-        url = URL.createObjectURL(blob);
+        blob = new Blob([byteArr], { type: 'application/pdf' });
       }
 
-      if (!url) {
-        showToast('File PDF tidak ditemukan di database.', 'error');
+      if (!blob) {
+        showToast('File PDF tidak ditemukan di database browser.', 'error');
         return;
       }
 
-      currentBlobUrl = url;
+      currentBlobUrl = URL.createObjectURL(blob);
 
       // Setup tombol unduh
       const dlBtn = document.getElementById('btnDownloadPdf');
@@ -502,13 +505,21 @@
 
       openModal('modalBaca');
 
-      // Inisialisasi PDF.js Engine
+      // 3. Render via PDF.js dengan ArrayBuffer Langsung (Bebas Masalah CORS dan Blob URL Scheme)
       if (window.pdfjsLib) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/js/pdf.worker.min.js';
         const spinner = document.getElementById('pdfLoadingSpinner');
         if (spinner) spinner.style.display = 'block';
 
-        const loadingTask = pdfjsLib.getDocument(currentBlobUrl);
+        const arrayBuffer = await blob.arrayBuffer();
+        const typedData = new Uint8Array(arrayBuffer);
+
+        const loadingTask = pdfjsLib.getDocument({
+          data: typedData,
+          disableRange: true,
+          disableStream: true
+        });
+
         pdfDoc = await loadingTask.promise;
         document.getElementById('pageCount').textContent = pdfDoc.numPages;
         pageNum = 1;
@@ -520,17 +531,13 @@
         const defaultViewport = page1.getViewport({ scale: 1.0 });
         pdfScale = Math.min(1.6, Math.max(0.6, containerWidth / defaultViewport.width));
 
-        renderPdfPage(pageNum);
+        await renderPdfPage(pageNum);
       } else {
-        // Fallback jika CDN lambat/offline
         openPdfInExternalTab();
       }
     } catch (e) {
-      console.error(e);
-      showToast('Membuka PDF di tab baru peramban...', 'info');
-      if (currentBlobUrl) {
-        window.open(currentBlobUrl, '_blank');
-      }
+      console.error('PDF Reader Error:', e);
+      showToast('Gagal merender PDF di layar kanvas, silakan gunakan tombol "📱 Buka di Ponsel"', 'warning');
     }
   }
 
