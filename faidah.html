@@ -66,6 +66,9 @@
       </div>
     </div>
 
+    <!-- Cloud Connection Status Badge -->
+    <div id="cloudStatusBadge" style="margin-bottom:14px;"></div>
+
     <!-- Quote -->
     <div class="quote-block mb-3">
       <div class="quote-arabic">قَيِّدُوا الْعِلْمَ بِالْكِتَابِ</div>
@@ -183,6 +186,9 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/supabase-client.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
   // Guest-friendly access: Allowed to browse and read without logging in!
@@ -212,7 +218,11 @@
     }
   }
 
+  // Render Cloud connection status pill
+  MisykahCloud.renderCloudBadge('cloudStatusBadge');
+
   let onlyFav = false;
+  let cachedFaidah = [];
 
   function getFaidahStorageKey() {
     return session ? `misykah_faidah_${session.userId}` : 'misykah_guest_faidah';
@@ -275,7 +285,30 @@
     }
   }
 
-  initDefaultFaidah();
+  async function loadAllFaidah() {
+    if (MisykahCloud.isReady()) {
+      cachedFaidah = await MisykahCloud.faidah.getAll();
+      if (cachedFaidah.length === 0) {
+        initDefaultFaidah();
+        cachedFaidah = getFaidahList();
+      }
+    } else {
+      let local = getFaidahList();
+      if (!local || local.length === 0) {
+        initDefaultFaidah();
+        local = getFaidahList();
+      }
+      cachedFaidah = local;
+    }
+    renderFaidah();
+  }
+
+  // Subscribe to real-time changes if Supabase is active
+  if (MisykahCloud.isReady()) {
+    MisykahCloud.subscribe('faidah', () => {
+      loadAllFaidah();
+    });
+  }
 
   function toggleFavFilter() {
     onlyFav = !onlyFav;
@@ -314,8 +347,7 @@
       setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
       return;
     }
-    const list = getFaidahList();
-    const item = list.find(f => f.id === id);
+    const item = cachedFaidah.find(f => f.id === id);
     if (!item) return;
 
     document.getElementById('modalTitle').textContent = '✏️ Edit Faidah Ilmu';
@@ -330,13 +362,13 @@
     openModal('faidahModal');
   }
 
-  function handleSaveFaidah(e) {
+  async function handleSaveFaidah(e) {
     e.preventDefault();
     if (!session) {
       showToast('Silakan masuk akun santri untuk menyimpan faidah pribadi.', 'warning');
       return;
     }
-    const id = document.getElementById('faidahId').value;
+    const id = document.getElementById('faidahId').value || generateId();
     const judul = document.getElementById('faidahJudul').value.trim();
     const kategori = document.getElementById('faidahKategori').value;
     const arabicText = document.getElementById('faidahArabic').value.trim();
@@ -344,73 +376,86 @@
     const sumber = document.getElementById('faidahSumber').value.trim();
     const tagsRaw = document.getElementById('faidahTags').value;
     const isPinned = document.getElementById('faidahPin').checked;
-
     const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
 
-    let list = getFaidahList();
+    const item = {
+      id,
+      userId: session.userId,
+      authorName: session.name,
+      judul,
+      kategori,
+      arabicText,
+      isi,
+      sumber,
+      tags,
+      isPinned,
+      tanggal: todayStr()
+    };
 
-    if (id) {
-      // Edit
-      const idx = list.findIndex(f => f.id === id);
-      if (idx !== -1) {
-        list[idx] = {
-          ...list[idx],
-          judul, kategori, arabicText, isi, sumber, tags, isPinned
-        };
-        showToast('Faidah berhasil diperbarui!', 'success');
+    if (MisykahCloud.isReady()) {
+      try {
+        await MisykahCloud.faidah.insert(item);
+        showToast('Faidah tersinkronisasi ke Cloud Supabase! ☁️', 'success');
+      } catch(err) {
+        showToast('Tersimpan di lokal (Cloud gagal terhubung)', 'info');
+        let list = getFaidahList();
+        list.unshift(item);
+        saveFaidahList(list);
       }
     } else {
-      // Baru
-      list.unshift({
-        id: generateId(),
-        judul,
-        kategori,
-        arabicText,
-        isi,
-        sumber,
-        tags,
-        isPinned,
-        tanggal: todayStr()
-      });
+      let list = getFaidahList();
+      const existingIdx = list.findIndex(x => x.id === id);
+      if (existingIdx !== -1) list[existingIdx] = item;
+      else list.unshift(item);
+      saveFaidahList(list);
       showToast('Faidah baru berhasil dicatat!', 'success');
     }
 
-    saveFaidahList(list);
     closeModal('faidahModal');
-    renderFaidah();
+    loadAllFaidah();
   }
 
-  function deleteFaidah(id) {
+  async function deleteFaidah(id) {
     if (!session) {
       showToast('Silakan masuk akun santri untuk mengelola faidah.', 'warning');
       return;
     }
     if (!confirm('Yakin ingin menghapus catatan faidah ini?')) return;
-    let list = getFaidahList();
-    list = list.filter(f => f.id !== id);
-    saveFaidahList(list);
+
+    if (MisykahCloud.isReady()) {
+      await MisykahCloud.faidah.delete(id);
+    } else {
+      let list = getFaidahList();
+      list = list.filter(f => f.id !== id);
+      saveFaidahList(list);
+    }
     showToast('Faidah telah dihapus.', 'info');
-    renderFaidah();
+    loadAllFaidah();
   }
 
-  function togglePin(id) {
+  async function togglePin(id) {
     if (!session) {
       showToast('Silakan masuk akun santri untuk menandai favorit ⭐', 'info');
       return;
     }
-    let list = getFaidahList();
-    const item = list.find(f => f.id === id);
+    const item = cachedFaidah.find(f => f.id === id);
     if (item) {
       item.isPinned = !item.isPinned;
-      saveFaidahList(list);
+      if (MisykahCloud.isReady()) {
+        await MisykahCloud.faidah.insert(item);
+      } else {
+        let list = getFaidahList();
+        const idx = list.findIndex(f => f.id === id);
+        if (idx !== -1) list[idx] = item;
+        saveFaidahList(list);
+      }
       showToast(item.isPinned ? 'Faidah disematkan di atas ⭐' : 'Sematkan dilepas', 'success');
-      renderFaidah();
+      loadAllFaidah();
     }
   }
 
   function copyFaidah(id) {
-    const list = getFaidahList();
-    const item = list.find(f => f.id === id);
+    const item = cachedFaidah.find(f => f.id === id);
     if (!item) return;
 
     let text = `💡 *${item.judul}*\n_(${item.kategori})_\n\n`;
@@ -427,7 +472,7 @@
   }
 
   function renderFaidah() {
-    const list = getFaidahList();
+    const list = cachedFaidah;
     const search = document.getElementById('searchInput').value.toLowerCase();
     const category = document.getElementById('categoryFilter').value;
 
@@ -438,8 +483,8 @@
     document.getElementById('catCount').textContent = uniqueCats.size;
 
     let filtered = list.filter(f => {
-      const matchSearch = f.judul.toLowerCase().includes(search) ||
-                          f.isi.toLowerCase().includes(search) ||
+      const matchSearch = (f.judul || '').toLowerCase().includes(search) ||
+                          (f.isi || '').toLowerCase().includes(search) ||
                           (f.arabicText && f.arabicText.includes(search)) ||
                           (f.sumber && f.sumber.toLowerCase().includes(search)) ||
                           (f.tags && f.tags.some(t => t.toLowerCase().includes(search)));
@@ -452,7 +497,7 @@
     filtered.sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-      return b.id.localeCompare(a.id);
+      return String(b.id).localeCompare(String(a.id));
     });
 
     const container = document.getElementById('faidahContainer');
@@ -473,6 +518,7 @@
           <div>
             <span class="faidah-badge">${escapeHtml(f.kategori)}</span>
             <div class="faidah-title mt-1">${escapeHtml(f.judul)}</div>
+            ${f.authorName ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">✍️ Oleh: ${escapeHtml(f.authorName)}</div>` : ''}
           </div>
           <button onclick="togglePin('${f.id}')" title="${f.isPinned ? 'Lepas Favorit' : 'Jadikan Favorit'}" style="background:none;border:none;font-size:1.2rem;cursor:pointer;">
             ${f.isPinned ? '⭐' : '☆'}
@@ -504,7 +550,7 @@
     `).join('');
   }
 
-  renderFaidah();
+  loadAllFaidah();
 </script>
 </body>
 </html>

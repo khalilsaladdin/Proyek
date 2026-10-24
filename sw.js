@@ -3,7 +3,7 @@
 // Offline First Cache & Asset Management
 // ============================================================
 
-const CACHE_NAME = 'misykah-v1.2.0';
+const CACHE_NAME = 'misykah-v1.3.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,8 @@ const STATIC_ASSETS = [
   './faidah.html',
   './privacy.html',
   './assets/css/style.css',
+  './assets/js/supabase-config.js',
+  './assets/js/supabase-client.js',
   './assets/js/app.js',
   './assets/icons/logo.svg',
   './favicon.svg',

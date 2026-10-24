@@ -66,6 +66,9 @@
       </div>
     </div>
 
+    <!-- Cloud Connection Status Badge -->
+    <div id="cloudBelajarBadge" style="margin-bottom:14px;"></div>
+
     <!-- Quote -->
     <div class="quote-block mb-3">
       <div class="quote-arabic">وَتَعَاوَنُوا عَلَى الْبِرِّ وَالتَّقْوَىٰ</div>
@@ -301,6 +304,9 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/supabase-client.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
   // Guest-friendly access: Allowed to browse classes and discussions without logging in!
@@ -330,6 +336,9 @@
     }
   }
 
+  // Render Cloud connection status pill
+  MisykahCloud.renderCloudBadge('cloudBelajarBadge');
+
   // Tab switching
   function switchHalaqahTab(tab) {
     document.querySelectorAll('.halaqah-tab').forEach(b => b.classList.remove('active'));
@@ -357,14 +366,11 @@
     }
   }
 
-  // Initial Seed Data (only once)
+  // Initial Seed Data (only once for local mode)
   function initSeedData() {
-    if (localStorage.getItem('misykah_seed_initialized')) {
-      return;
-    }
+    if (localStorage.getItem('misykah_seed_initialized')) return;
     localStorage.setItem('misykah_seed_initialized', 'true');
 
-    // Seed classes
     let kelasList = getGlobalData('classes');
     if (!kelasList || kelasList.length === 0) {
       kelasList = [
@@ -395,6 +401,15 @@
 
   initSeedData();
 
+  // Setup Realtime sync if Supabase is connected
+  if (MisykahCloud.isReady()) {
+    MisykahCloud.subscribe('classes', () => renderKelas());
+    MisykahCloud.subscribe('halaqah', () => renderHalaqah());
+    MisykahCloud.subscribe('tasmi_requests', () => renderTasmi());
+    MisykahCloud.subscribe('forum_questions', () => renderForum());
+    MisykahCloud.subscribe('forum_answers', () => renderForum());
+  }
+
   // ── KELAS METHODS ──
   function openNewKelasModal() {
     if (!session) {
@@ -419,7 +434,7 @@
     openModal('joinKelasModal');
   }
 
-  function handleCreateKelas(e) {
+  async function handleCreateKelas(e) {
     e.preventDefault();
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
@@ -430,13 +445,13 @@
     const kode = document.getElementById('kelasKode').value.trim().toUpperCase();
     const link = document.getElementById('kelasLink').value.trim();
 
-    let list = getGlobalData('classes');
-    if (list.some(k => k.kode === kode)) {
+    const currentClasses = await MisykahCloud.classes.getAll();
+    if (currentClasses.some(k => k.kode === kode)) {
       showToast('Kode kelas sudah digunakan, silakan buat kode unik lain!', 'error');
       return;
     }
 
-    list.unshift({
+    const newClass = {
       id: generateId(),
       nama,
       pemateri,
@@ -445,22 +460,26 @@
       creatorName: session.name,
       creatorId: session.userId,
       anggota: [session.name]
-    });
+    };
 
-    saveGlobalData('classes', list);
-    closeModal('kelasModal');
-    showToast('Grup Kelas berhasil dibuat! 🏫', 'success');
-    renderKelas();
+    try {
+      await MisykahCloud.classes.insert(newClass);
+      closeModal('kelasModal');
+      showToast('Grup Kelas berhasil dibuat! 🏫', 'success');
+      renderKelas();
+    } catch(err) {
+      showToast('Gagal membuat kelas di cloud', 'error');
+    }
   }
 
-  function handleJoinByCode(e) {
+  async function handleJoinByCode(e) {
     e.preventDefault();
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
       return;
     }
     const kodeInput = document.getElementById('inputKodeAkses').value.trim().toUpperCase();
-    let list = getGlobalData('classes');
+    const list = await MisykahCloud.classes.getAll();
     const targetKelas = list.find(k => k.kode === kodeInput);
 
     if (!targetKelas) {
@@ -468,36 +487,30 @@
       return;
     }
 
-    if (targetKelas.anggota.includes(session.name)) {
+    if (targetKelas.anggota && targetKelas.anggota.includes(session.name)) {
       showToast('Anda sudah menjadi anggota di kelas ini.', 'info');
       closeModal('joinKelasModal');
       return;
     }
 
-    targetKelas.anggota.push(session.name);
-    saveGlobalData('classes', list);
+    await MisykahCloud.classes.join(targetKelas.id, session.name);
     closeModal('joinKelasModal');
     showToast(`Berhasil bergabung ke kelas "${targetKelas.nama}"! 🎉`, 'success');
     renderKelas();
   }
 
-  function joinDirectKelas(id) {
+  async function joinDirectKelas(id) {
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu untuk bergabung ke kelas 🏫', 'info');
       setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
       return;
     }
-    let list = getGlobalData('classes');
-    const target = list.find(x => x.id === id);
-    if (target && !target.anggota.includes(session.name)) {
-      target.anggota.push(session.name);
-      saveGlobalData('classes', list);
-      showToast('Berhasil bergabung ke kelas! 🎉', 'success');
-      renderKelas();
-    }
+    await MisykahCloud.classes.join(id, session.name);
+    showToast('Berhasil bergabung ke kelas! 🎉', 'success');
+    renderKelas();
   }
 
-  function leaveKelas(id) {
+  async function leaveKelas(id) {
     let list = getGlobalData('classes');
     const target = list.find(x => x.id === id);
     if (target) {
@@ -511,17 +524,15 @@
     }
   }
 
-  function deleteKelas(id) {
+  async function deleteKelas(id) {
     if (!confirm('Yakin ingin menghapus grup kelas ini?')) return;
-    let list = getGlobalData('classes');
-    list = list.filter(x => x.id !== id);
-    saveGlobalData('classes', list);
+    await MisykahCloud.classes.delete(id);
     showToast('Grup kelas berhasil dihapus 🗑️', 'info');
     renderKelas();
   }
 
-  function renderKelas() {
-    const list = getGlobalData('classes');
+  async function renderKelas() {
+    const list = await MisykahCloud.classes.getAll();
     const grid = document.getElementById('kelasGrid');
     if (!grid) return;
 
@@ -588,7 +599,7 @@
     openModal('halaqahModal');
   }
 
-  function handleCreateHalaqah(e) {
+  async function handleCreateHalaqah(e) {
     e.preventDefault();
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
@@ -602,65 +613,51 @@
     const status = document.getElementById('halaqahStatus').value;
     const deskripsi = document.getElementById('halaqahDeskripsi').value.trim();
 
-    let list = getGlobalData('halaqah_rooms');
-    list.unshift({
+    const newHalaqah = {
       id: generateId(),
       judul, materi, waktu, max, link, status, deskripsi,
       creatorName: session.name,
       creatorId: session.userId,
       participants: [session.name]
-    });
-    saveGlobalData('halaqah_rooms', list);
+    };
+
+    await MisykahCloud.halaqah.insert(newHalaqah);
     closeModal('halaqahModal');
     showToast('Ruang Halaqah berhasil dibuka! 🕌', 'success');
     renderHalaqah();
   }
 
-  function toggleJoinHalaqah(id) {
+  async function toggleJoinHalaqah(id) {
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu untuk bergabung ke halaqah 🕌', 'info');
       setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
       return;
     }
-    let list = getGlobalData('halaqah_rooms');
-    const h = list.find(x => x.id === id);
-    if (!h) return;
-
-    const myName = session.name;
-    const idx = h.participants.indexOf(myName);
-    if (idx !== -1) {
-      h.participants.splice(idx, 1);
-      showToast('Anda telah keluar dari halaqah ini', 'info');
+    const res = await MisykahCloud.halaqah.toggleJoin(id, session.name);
+    if (res === 'full') {
+      showToast('Kapasitas halaqah sudah penuh!', 'warning');
     } else {
-      if (h.participants.length >= h.max) {
-        showToast('Kapasitas halaqah sudah penuh!', 'warning');
-        return;
-      }
-      h.participants.push(myName);
-      showToast('Barakallahu fiik, Anda berhasil bergabung ke halaqah! 🎉', 'success');
+      showToast('Status keikutsertaan halaqah diperbarui! 🕌', 'success');
     }
-    saveGlobalData('halaqah_rooms', list);
     renderHalaqah();
   }
 
-  function deleteHalaqah(id) {
+  async function deleteHalaqah(id) {
     if (!confirm('Yakin ingin menghapus ruang halaqah ini?')) return;
-    let list = getGlobalData('halaqah_rooms');
-    list = list.filter(x => x.id !== id);
-    saveGlobalData('halaqah_rooms', list);
+    await MisykahCloud.halaqah.delete(id);
     showToast('Halaqah telah dihapus 🗑️', 'info');
     renderHalaqah();
   }
 
-  function clearAllHalaqah() {
+  async function clearAllHalaqah() {
     if (!confirm('Yakin ingin menghapus SEMUA daftar halaqah yang ada?')) return;
     saveGlobalData('halaqah_rooms', []);
     showToast('Semua halaqah telah dibersihkan', 'info');
     renderHalaqah();
   }
 
-  function renderHalaqah() {
-    const list = getGlobalData('halaqah_rooms');
+  async function renderHalaqah() {
+    const list = await MisykahCloud.halaqah.getAll();
     const grid = document.getElementById('halaqahGrid');
     if (!grid) return;
 
@@ -725,7 +722,7 @@
     openModal('tasmiModal');
   }
 
-  function handleCreateTasmi(e) {
+  async function handleCreateTasmi(e) {
     e.preventDefault();
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
@@ -735,52 +732,41 @@
     const waktu = document.getElementById('tasmiWaktu').value.trim();
     const catatan = document.getElementById('tasmiCatatan').value.trim();
 
-    let list = getGlobalData('tasmi_requests');
-    list.unshift({
+    const newTasmi = {
       id: generateId(),
       materi, waktu, catatan,
       requesterName: session.name,
       requesterId: session.userId,
       partnerName: null,
       status: 'open'
-    });
-    saveGlobalData('tasmi_requests', list);
+    };
+
+    await MisykahCloud.tasmi.insert(newTasmi);
     closeModal('tasmiModal');
     showToast('Permintaan partner tasmi\' berhasil dipublikasikan! 📢', 'success');
     renderTasmi();
   }
 
-  function acceptTasmi(id) {
+  async function acceptTasmi(id) {
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu untuk menyimak tasmi\' 🤝', 'info');
       setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
       return;
     }
-    let list = getGlobalData('tasmi_requests');
-    const t = list.find(x => x.id === id);
-    if (!t) return;
-    if (t.requesterId === session.userId) {
-      showToast('Ini permintaan yang Anda buat sendiri', 'info');
-      return;
-    }
-    t.partnerName = session.name;
-    t.status = 'matched';
-    saveGlobalData('tasmi_requests', list);
-    showToast(`Masya Allah, Anda telah menjadi partner tasmi' ${t.requesterName}! 🎉`, 'success');
+    await MisykahCloud.tasmi.accept(id, session.name);
+    showToast('Masya Allah, Anda telah menjadi partner tasmi\'! 🎉', 'success');
     renderTasmi();
   }
 
-  function deleteTasmi(id) {
+  async function deleteTasmi(id) {
     if (!confirm('Yakin ingin menghapus permintaan partner tasmi ini?')) return;
-    let list = getGlobalData('tasmi_requests');
-    list = list.filter(x => x.id !== id);
-    saveGlobalData('tasmi_requests', list);
+    await MisykahCloud.tasmi.delete(id);
     showToast('Permintaan tasmi dihapus 🗑️', 'info');
     renderTasmi();
   }
 
-  function renderTasmi() {
-    const list = getGlobalData('tasmi_requests');
+  async function renderTasmi() {
+    const list = await MisykahCloud.tasmi.getAll();
     const grid = document.getElementById('tasmiGrid');
     if (!grid) return;
 
@@ -838,7 +824,7 @@
     openModal('forumModal');
   }
 
-  function handleCreateQuestion(e) {
+  async function handleCreateQuestion(e) {
     e.preventDefault();
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
@@ -847,23 +833,22 @@
     const topik = document.getElementById('forumTopik').value.trim();
     const pertanyaan = document.getElementById('forumPertanyaan').value.trim();
 
-    let list = getGlobalData('forum_questions');
-    list.unshift({
+    const newQ = {
       id: generateId(),
       topik,
       pertanyaan,
       authorName: session.name,
       authorId: session.userId,
-      tanggal: todayStr(),
-      answers: []
-    });
-    saveGlobalData('forum_questions', list);
+      tanggal: todayStr()
+    };
+
+    await MisykahCloud.forum.insertQuestion(newQ);
     closeModal('forumModal');
     showToast('Pertanyaan berhasil diunggah ke forum! 💬', 'success');
     renderForum();
   }
 
-  function submitAnswer(questionId) {
+  async function submitAnswer(questionId) {
     if (!session) {
       showToast('Silakan masuk akun santri terlebih dahulu untuk menjawab 💡', 'info');
       setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
@@ -874,34 +859,21 @@
     const text = input.value.trim();
     if (!text) return;
 
-    let list = getGlobalData('forum_questions');
-    const q = list.find(x => x.id === questionId);
-    if (!q) return;
-
-    if (!q.answers) q.answers = [];
-    q.answers.push({
-      authorName: session.name,
-      text: text,
-      tanggal: todayStr()
-    });
-
-    saveGlobalData('forum_questions', list);
+    await MisykahCloud.forum.insertAnswer(questionId, session.name, text);
     input.value = '';
     showToast('Jawaban/tanggapan berhasil dikirim! ✨', 'success');
     renderForum();
   }
 
-  function deleteQuestion(id) {
+  async function deleteQuestion(id) {
     if (!confirm('Yakin ingin menghapus pertanyaan ini dari forum?')) return;
-    let list = getGlobalData('forum_questions');
-    list = list.filter(x => x.id !== id);
-    saveGlobalData('forum_questions', list);
+    await MisykahCloud.forum.deleteQuestion(id);
     showToast('Pertanyaan dihapus dari forum 🗑️', 'info');
     renderForum();
   }
 
-  function renderForum() {
-    const list = getGlobalData('forum_questions');
+  async function renderForum() {
+    const list = await MisykahCloud.forum.getAll();
     const container = document.getElementById('forumContainer');
     if (!container) return;
 
