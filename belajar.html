@@ -78,14 +78,85 @@
 
     <!-- Navigation Tabs -->
     <div class="halaqah-tabs">
-      <button class="halaqah-tab active" id="tabKelas" onclick="switchHalaqahTab('kelas')">🏫 Grup Kelas Belajar</button>
-      <button class="halaqah-tab" id="tabHalaqah" onclick="switchHalaqahTab('halaqah')">🕌 Ruang Halaqah Murojaah</button>
+      <button class="halaqah-tab active" id="tabHalaqah" onclick="switchHalaqahTab('halaqah')">🕌 Ruang Belajar & Halaqah (Sensor Jarak)</button>
+      <button class="halaqah-tab" id="tabKelas" onclick="switchHalaqahTab('kelas')">🏫 Grup Kelas Terstruktur</button>
       <button class="halaqah-tab" id="tabTasmi" onclick="switchHalaqahTab('tasmi')">🎧 Partner Tasmi' (Sima'an)</button>
       <button class="halaqah-tab" id="tabForum" onclick="switchHalaqahTab('forum')">💬 Forum Ilmiah Santri</button>
     </div>
 
-    <!-- SECTION 1: GRUP KELAS BELAJAR (KODE AKSES) -->
-    <div id="sectionKelas">
+    <!-- SECTION 1: RUANG BELAJAR MANDIRI & HALAQAH (PUBLIK / PRIVAT PIN + RADAR SENSOR JARAK) -->
+    <div id="sectionHalaqah">
+      <!-- Radar Proximity Control Panel -->
+      <div class="radar-control-panel">
+        <div class="radar-header-row">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div class="gps-status-badge" id="gpsStatusBadge">
+              <span class="gps-dot" id="gpsDot"></span>
+              <span id="gpsText">📍 Lokasi Santri: Belum Terdeteksi</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="requestUserLocation()" id="btnDetectGps">
+              📍 Deteksi GPS Saya
+            </button>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:0.8rem;color:var(--text-muted);">atau</span>
+              <select id="quickCitySelect" class="form-control" style="padding:5px 10px;font-size:0.82rem;width:auto;" onchange="setQuickCity(this.value)">
+                <option value="">-- Pilih Kota / Titik Cepat --</option>
+                <option value="-6.2088,106.8456|Jakarta Pusat">Jakarta Pusat (Monas / Istiqlal)</option>
+                <option value="-6.2351,106.7993|Jakarta Selatan">Jakarta Selatan (Kebayoran)</option>
+                <option value="-6.4025,106.9620|Cileungsi / Bogor Timur">Cileungsi (Bogor Timur)</option>
+                <option value="-6.5971,106.8060|Bogor Kota">Bogor Kota</option>
+                <option value="-6.9175,107.6191|Bandung">Bandung</option>
+                <option value="-6.2383,106.9756|Bekasi">Bekasi</option>
+                <option value="-6.4025,106.7942|Depok">Depok</option>
+                <option value="-6.9667,110.4167|Semarang">Semarang</option>
+                <option value="-7.7956,110.3695|Yogyakarta">Yogyakarta</option>
+                <option value="-7.5755,110.8243|Surakarta / Solo">Surakarta / Solo</option>
+                <option value="-7.2575,112.7521|Surabaya">Surabaya</option>
+                <option value="-7.9666,112.6326|Malang">Malang</option>
+                <option value="3.5952,98.6722|Medan">Medan</option>
+                <option value="-5.1477,119.4327|Makassar">Makassar</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-1 flex-wrap">
+            <button class="btn btn-outline btn-sm" onclick="openJoinPinModal()">🔑 Masuk via Kode PIN</button>
+            <button class="btn btn-primary btn-sm" onclick="openNewHalaqahModal()">+ Buka Ruang Belajar Baru</button>
+          </div>
+        </div>
+
+        <div class="radar-filter-row">
+          <div>
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">
+              🎚️ Penjangka Jarak (Jarak dari Lokasi Antum):
+            </div>
+            <div class="proximity-pills">
+              <button class="proximity-pill active" data-range="all" onclick="setDistanceFilter('all', this)">🌐 Semua (Online & Offline)</button>
+              <button class="proximity-pill" data-range="5" onclick="setDistanceFilter(5, this)">📍 Dekat Sekali (≤ 5 km)</button>
+              <button class="proximity-pill" data-range="25" onclick="setDistanceFilter(25, this)">📍 Satu Kota (≤ 25 km)</button>
+              <button class="proximity-pill" data-range="100" onclick="setDistanceFilter(100, this)">📍 Regional (≤ 100 km)</button>
+              <button class="proximity-pill" data-range="online" onclick="setDistanceFilter('online', this)">💻 Khusus Online</button>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <select id="privacyFilter" class="form-control" style="padding:6px 10px;font-size:0.83rem;width:auto;" onchange="applyFilters()">
+              <option value="all">Semua Tipe Akses</option>
+              <option value="public">🌐 Terbuka Publik</option>
+              <option value="private">🔒 Privat (Butuh PIN)</option>
+            </select>
+            <input type="text" id="searchRuangInput" class="form-control" placeholder="🔍 Cari ruang / kitab / masjid..." style="width:210px;padding:6px 12px;font-size:0.83rem;" oninput="applyFilters()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Halaqah Grid -->
+      <div class="halaqah-grid" id="halaqahGrid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- SECTION 2: GRUP KELAS BELAJAR (KODE AKSES) -->
+    <div id="sectionKelas" class="d-none">
       <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
           <h3 style="font-size:1.1rem;color:var(--primary-dark);font-weight:700;">🏫 Grup Kelas & Komunitas Santri</h3>
@@ -97,23 +168,6 @@
         </div>
       </div>
       <div class="halaqah-grid" id="kelasGrid">
-        <!-- Rendered by JS -->
-      </div>
-    </div>
-
-    <!-- SECTION 2: RUANG HALAQAH UMUM -->
-    <div id="sectionHalaqah" class="d-none">
-      <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-        <div>
-          <h3 style="font-size:1.1rem;color:var(--primary-dark);font-weight:700;">🕌 Ruang Halaqah Murojaah Terbuka</h3>
-          <p style="font-size:0.83rem;color:var(--text-muted);">Sesi murojaah bersama santri untuk mengulang hafalan per juz atau kitab.</p>
-        </div>
-        <div class="flex gap-1 flex-wrap">
-          <button class="btn btn-outline btn-sm" onclick="clearAllHalaqah()" title="Hapus semua halaqah yang ada">🗑️ Bersihkan Semua</button>
-          <button class="btn btn-primary btn-sm" onclick="openNewHalaqahModal()">+ Buat Halaqah Baru</button>
-        </div>
-      </div>
-      <div class="halaqah-grid" id="halaqahGrid">
         <!-- Rendered by JS -->
       </div>
     </div>
@@ -203,36 +257,130 @@
   </div>
 </div>
 
-<!-- MODAL: BUAT HALAQAH BARU -->
-<div class="modal-overlay" id="halaqahModal">
-  <div class="modal" style="max-width:540px;">
+<!-- MODAL: GABUNG RUANG BELAJAR VIA KODE PIN -->
+<div class="modal-overlay" id="joinPinModal">
+  <div class="modal" style="max-width:440px;">
     <div class="modal-header">
-      <div class="modal-title">🕌 Buat Halaqah Murojaah Baru</div>
+      <div class="modal-title">🔑 Masuk Ruang Belajar via PIN</div>
+      <button class="modal-close" onclick="closeModal('joinPinModal')">✕</button>
+    </div>
+    <form onsubmit="handleJoinByPin(event)">
+      <div class="form-group">
+        <label class="form-label">Masukkan Kode PIN Akses Ruang *</label>
+        <input type="text" id="inputPinAkses" class="form-control" placeholder="Contoh: NAHWU26" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;text-align:center;font-size:1.2rem;" required>
+        <p class="form-hint">Dapatkan kode PIN dari pengampu atau santri yang membuka majelis.</p>
+      </div>
+      <div class="flex justify-between gap-1 mt-3">
+        <button type="button" class="btn btn-outline" onclick="closeModal('joinPinModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Masuk Ruang Belajar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: BUAT RUANG BELAJAR BARU -->
+<div class="modal-overlay" id="halaqahModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">🕌 Buka Ruang Belajar Mandiri Baru</div>
       <button class="modal-close" onclick="closeModal('halaqahModal')">✕</button>
     </div>
     <form onsubmit="handleCreateHalaqah(event)">
       <div class="form-group">
-        <label class="form-label">Nama Halaqah *</label>
-        <input type="text" id="halaqahJudul" class="form-control" placeholder="Contoh: Halaqah Murojaah Juz 30 Bersama" required>
+        <label class="form-label">Nama Ruang Belajar / Majelis *</label>
+        <input type="text" id="halaqahJudul" class="form-control" placeholder="Contoh: Mudzakarah Fathul Qorib Bab Sholat / Halaqah Murojaah" required>
       </div>
-      <div class="form-group">
-        <label class="form-label">Materi / Kitab *</label>
-        <input type="text" id="halaqahMateri" class="form-control" placeholder="Contoh: Al-Qur'an Juz 30 / Matan Al-Jurumiyyah" required>
-      </div>
+
       <div class="grid-2">
         <div class="form-group">
-          <label class="form-label">Hari & Jam *</label>
+          <label class="form-label">Materi / Kitab yang Dikaji *</label>
+          <input type="text" id="halaqahMateri" class="form-control" placeholder="Contoh: Matan Al-Ajurrumiyyah / Juz 30" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pemateri / Fasilitator *</label>
+          <input type="text" id="halaqahFasilitator" class="form-control" placeholder="Nama pengampu majelis" required>
+        </div>
+      </div>
+
+      <!-- Tipe Akses Privasi -->
+      <div class="form-group" style="background:var(--cream);padding:12px 14px;border-radius:8px;border:1px solid var(--cream-dark);">
+        <label class="form-label" style="font-weight:700;margin-bottom:6px;">Tipe Akses Ruang Belajar *</label>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.88rem;">
+            <input type="radio" name="halaqahAkses" value="public" checked onchange="toggleAksesFields(this.value)">
+            <span>🌐 <strong>Publik</strong> (Siapa saja boleh bergabung)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.88rem;">
+            <input type="radio" name="halaqahAkses" value="private" onchange="toggleAksesFields(this.value)">
+            <span>🔒 <strong>Privat</strong> (Wajib Kode Akses PIN)</span>
+          </label>
+        </div>
+        <div id="privateKodeField" style="display:none;margin-top:10px;">
+          <label class="form-label" style="font-size:0.82rem;">Kode Akses PIN (Password Ruang) *</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="halaqahKode" class="form-control" placeholder="Contoh: NAHWU26" style="text-transform:uppercase;letter-spacing:1px;font-weight:700;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="generateRandomPin()" style="white-space:nowrap;">🎲 Acak PIN</button>
+          </div>
+          <p class="form-hint" style="margin-top:4px;">Bagikan PIN ini hanya kepada santri yang hendak diundang.</p>
+        </div>
+      </div>
+
+      <!-- Mode Pertemuan (Online / Offline) -->
+      <div class="form-group" style="background:rgba(26,92,56,0.04);padding:12px 14px;border-radius:8px;border:1px solid rgba(26,92,56,0.15);">
+        <label class="form-label" style="font-weight:700;margin-bottom:6px;">Metode & Tempat Belajar *</label>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.88rem;">
+            <input type="radio" name="halaqahMode" value="online" checked onchange="toggleModeFields(this.value)">
+            <span>🌐 <strong>Online</strong> (Google Meet / Zoom / Global)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.88rem;">
+            <input type="radio" name="halaqahMode" value="offline" onchange="toggleModeFields(this.value)">
+            <span>🕌 <strong>Tatap Muka / Offline</strong> (Masjid / Ma'had Sekitar)</span>
+          </label>
+        </div>
+
+        <!-- Online Field -->
+        <div id="modeOnlineField">
+          <label class="form-label" style="font-size:0.82rem;">Link Pertemuan Online (Google Meet / Zoom / Tautan)</label>
+          <input type="text" id="halaqahLinkOnline" class="form-control" placeholder="Contoh: https://meet.google.com/abc-defg-hij">
+        </div>
+
+        <!-- Offline Fields -->
+        <div id="modeOfflineField" style="display:none;">
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label" style="font-size:0.82rem;">Nama Tempat / Masjid / Lokasi Fisik *</label>
+            <input type="text" id="halaqahLokasiNama" class="form-control" placeholder="Contoh: Masjid Jami' Al-Barkah, Cileungsi (Lt. 2)">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+            <span style="font-size:0.8rem;color:var(--text-muted);">Titik Koordinat GPS (untuk sensor jarak santri sekitar):</span>
+            <button type="button" class="btn btn-outline btn-sm" onclick="fetchCoordinatesForRoom()" style="font-size:0.78rem;">
+              📍 Ambil Lokasi GPS Saya
+            </button>
+          </div>
+          <div class="grid-2">
+            <div>
+              <label class="form-label" style="font-size:0.75rem;">Latitude (Garis Lintang)</label>
+              <input type="text" id="halaqahLat" class="form-control" placeholder="-6.2088" style="font-family:monospace;font-size:0.85rem;">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.75rem;">Longitude (Garis Bujur)</label>
+              <input type="text" id="halaqahLng" class="form-control" placeholder="106.8456" style="font-family:monospace;font-size:0.85rem;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Hari & Jam Pertemuan *</label>
           <input type="text" id="halaqahWaktu" class="form-control" placeholder="Contoh: Ba'da Ashar (16:00)" required>
         </div>
         <div class="form-group">
           <label class="form-label">Kapasitas Maksimal</label>
-          <input type="number" id="halaqahMax" class="form-control" value="8" min="2" max="50">
+          <input type="number" id="halaqahMax" class="form-control" value="10" min="2" max="100">
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Lokasi / Tautan Pertemuan</label>
-        <input type="text" id="halaqahLink" class="form-control" placeholder="Contoh: Masjid Lantai 2 / link Google Meet">
-      </div>
+
       <div class="form-group">
         <label class="form-label">Status Sesi</label>
         <select id="halaqahStatus" class="form-control">
@@ -240,13 +388,15 @@
           <option value="upcoming" selected>Akan Datang ⏳</option>
         </select>
       </div>
+
       <div class="form-group">
-        <label class="form-label">Catatan / Deskripsi Singkat</label>
-        <textarea id="halaqahDeskripsi" class="form-control" rows="2" placeholder="Tata tertib atau target hafalan sesi ini..."></textarea>
+        <label class="form-label">Catatan / Tata Tertib Majelis</label>
+        <textarea id="halaqahDeskripsi" class="form-control" rows="2" placeholder="Persyaratan kitab, tata tertib, atau target hafalan sesi ini..."></textarea>
       </div>
+
       <div class="flex justify-between gap-1 mt-3">
         <button type="button" class="btn btn-outline" onclick="closeModal('halaqahModal')">Batal</button>
-        <button type="submit" class="btn btn-primary">🚀 Buka Halaqah</button>
+        <button type="submit" class="btn btn-primary">🚀 Buka Ruang Belajar</button>
       </div>
     </form>
   </div>
@@ -368,8 +518,8 @@
 
   // Initial Seed Data (only once for local mode)
   function initSeedData() {
-    if (localStorage.getItem('misykah_seed_initialized')) return;
-    localStorage.setItem('misykah_seed_initialized', 'true');
+    if (localStorage.getItem('misykah_seed_initialized_v2')) return;
+    localStorage.setItem('misykah_seed_initialized_v2', 'true');
 
     let kelasList = getGlobalData('classes');
     if (!kelasList || kelasList.length === 0) {
@@ -396,6 +546,85 @@
         }
       ];
       saveGlobalData('classes', kelasList);
+    }
+
+    let halaqahList = getGlobalData('halaqah_rooms');
+    if (!halaqahList || halaqahList.length === 0) {
+      halaqahList = [
+        {
+          id: 'hlq_seed_1',
+          judul: "Murojaah Bersama Surat Al-Kahfi & Juz 'Amma",
+          materi: "Surah Al-Kahfi (Ayat 1-110)",
+          waktu: "Jumat Pagi & Ahad Pagi (06:00 WIB)",
+          max: 12,
+          link: "https://meet.google.com/misykah-halaqah",
+          status: "ongoing",
+          deskripsi: "Saling menyimak kelancaran hafalan bersama sesama thullab. Terbuka umum lintas kota.",
+          creatorName: "Ustadz Daffa",
+          participants: ["Ustadz Daffa", "Santri Utama", "Bintang Khalil", "Ahmad Ridwan"],
+          isPrivate: false,
+          kode: "",
+          mode: "online",
+          lat: null,
+          lng: null,
+          locationName: ""
+        },
+        {
+          id: 'hlq_seed_2',
+          judul: "Halaqah Mudzakarah Matan Al-Ajurrumiyyah",
+          materi: "Kitab Al-Ajurrumiyyah (Kaidah I'rob)",
+          waktu: "Sabtu Sore Ba'da Ashar (16:00 WIB)",
+          max: 15,
+          link: "Masjid Istiqlal Jakarta Pusat",
+          status: "upcoming",
+          deskripsi: "Tatap muka membahas bab marfu'atul asma' secara mendalam bersama teman santri se-Jabodetabek.",
+          creatorName: "Ahmad Ridwan",
+          participants: ["Ahmad Ridwan", "Farhan Al-Ghifari"],
+          isPrivate: false,
+          kode: "",
+          mode: "offline",
+          lat: -6.1702,
+          lng: 106.8317,
+          locationName: "Masjid Istiqlal, Gambir, Jakarta Pusat"
+        },
+        {
+          id: 'hlq_seed_3',
+          judul: "Kajian Privat Intensif Fiqih Al-Yaqut An-Nafis",
+          materi: "Fiqih Muamalah & Thaharah",
+          waktu: "Ahad Malam Ba'da Isya (19:30 WIB)",
+          max: 8,
+          link: "Masjid Jami' Al-Barkah, Cileungsi",
+          status: "upcoming",
+          deskripsi: "Ruang halaqah khusus santri terdaftar. Wajib memiliki kitab matan dan catatan murajaah.",
+          creatorName: "Ustadz Daffa",
+          participants: ["Ustadz Daffa"],
+          isPrivate: true,
+          kode: "BARKAH26",
+          mode: "offline",
+          lat: -6.4025,
+          lng: 106.9620,
+          locationName: "Masjid Jami' Al-Barkah, Cileungsi, Bogor"
+        },
+        {
+          id: 'hlq_seed_4',
+          judul: "Karantina Tasmi' Mutun Thullabul Ilmi",
+          materi: "Baiquniyyah, Tuhfatul Athfal, & Al-Ushul Ats-Tsalatsah",
+          waktu: "Malam Rabu Pukul 20:00 WIB",
+          max: 10,
+          link: "https://zoom.us/j/misykah-mutun",
+          status: "ongoing",
+          deskripsi: "Setoran mutun ilmiah hafalan santri dengan target mutqin. Butuh kode PIN untuk masuk.",
+          creatorName: "K.H. Mansyur",
+          participants: ["K.H. Mansyur", "Irbah"],
+          isPrivate: true,
+          kode: "MUTUN7",
+          mode: "online",
+          lat: null,
+          lng: null,
+          locationName: ""
+        }
+      ];
+      saveGlobalData('halaqah_rooms', halaqahList);
     }
   }
 
@@ -583,20 +812,255 @@
     }).join('');
   }
 
-  // ── HALAQAH METHODS ──
+  // ── GEOLOKASI SANTRI & SENSOR PENJANGKA JARAK ───────────────
+  let userLocation = {
+    lat: null,
+    lng: null,
+    name: 'Belum Terdeteksi',
+    accuracy: null
+  };
+
+  try {
+    const savedLoc = localStorage.getItem('misykah_user_coords');
+    if (savedLoc) {
+      userLocation = JSON.parse(savedLoc);
+    }
+  } catch(e) {}
+
+  function updateUserLocationUI() {
+    const dot = document.getElementById('gpsDot');
+    const text = document.getElementById('gpsText');
+    const btn = document.getElementById('btnDetectGps');
+    if (!text) return;
+
+    if (userLocation.lat !== null && userLocation.lng !== null) {
+      if (dot) dot.classList.add('active');
+      text.textContent = `📍 Posisi: ${userLocation.name} (${Number(userLocation.lat).toFixed(3)}, ${Number(userLocation.lng).toFixed(3)})`;
+      if (btn) btn.textContent = '✓ Lokasi Terdeteksi';
+    } else {
+      if (dot) dot.classList.remove('active');
+      text.textContent = '📍 Lokasi Santri: Belum Terdeteksi';
+      if (btn) btn.textContent = '📍 Deteksi GPS Saya';
+    }
+  }
+
+  function requestUserLocation() {
+    if (!navigator.geolocation) {
+      showToast('Peramban browser tidak mendukung deteksi GPS.', 'warning');
+      return;
+    }
+    const btn = document.getElementById('btnDetectGps');
+    if (btn) btn.textContent = '⏳ Mendeteksi...';
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userLocation = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          name: 'Lokasi Anda (GPS)',
+          accuracy: Math.round(pos.coords.accuracy)
+        };
+        localStorage.setItem('misykah_user_coords', JSON.stringify(userLocation));
+        updateUserLocationUI();
+        showToast(`Lokasi GPS santri aktif! Akurasi: ±${userLocation.accuracy}m 📍`, 'success');
+        renderHalaqah();
+      },
+      (err) => {
+        if (btn) btn.textContent = '📍 Deteksi GPS Saya';
+        showToast('Izin GPS tidak diberikan. Antum bisa memilih kota cepat di samping!', 'info');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }
+
+  function setQuickCity(val) {
+    if (!val) return;
+    const parts = val.split('|');
+    const coords = parts[0].split(',');
+    const lat = parseFloat(coords[0]);
+    const lng = parseFloat(coords[1]);
+    const name = parts[1] || 'Kota Pilihan';
+
+    userLocation = { lat, lng, name, accuracy: null };
+    localStorage.setItem('misykah_user_coords', JSON.stringify(userLocation));
+    updateUserLocationUI();
+    showToast(`Lokasi disetel ke: ${name} 📍`, 'success');
+    renderHalaqah();
+  }
+
+  // ── FILTER RUANG BELAJAR ──────────────────────────────────
+  let currentDistanceFilter = 'all'; // 'all', 5, 25, 100, 'online'
+  let currentPrivacyFilter = 'all';  // 'all', 'public', 'private'
+  let currentSearchQuery = '';
+
+  function setDistanceFilter(range, btn) {
+    currentDistanceFilter = range;
+    document.querySelectorAll('.proximity-pill').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderHalaqah();
+  }
+
+  function applyFilters() {
+    const pFilter = document.getElementById('privacyFilter');
+    if (pFilter) currentPrivacyFilter = pFilter.value;
+    const sInput = document.getElementById('searchRuangInput');
+    if (sInput) currentSearchQuery = sInput.value.trim().toLowerCase();
+    renderHalaqah();
+  }
+
+  // ── FORM INTERAKSI MODAL RUANG BELAJAR ─────────────────────
+  function toggleAksesFields(val) {
+    const f = document.getElementById('privateKodeField');
+    if (f) f.style.display = (val === 'private') ? 'block' : 'none';
+    if (val === 'private') {
+      const kodeInput = document.getElementById('halaqahKode');
+      if (kodeInput && !kodeInput.value) generateRandomPin();
+    }
+  }
+
+  function toggleModeFields(val) {
+    const onlineField = document.getElementById('modeOnlineField');
+    const offlineField = document.getElementById('modeOfflineField');
+    if (onlineField) onlineField.style.display = (val === 'online') ? 'block' : 'none';
+    if (offlineField) offlineField.style.display = (val === 'offline') ? 'block' : 'none';
+  }
+
+  function generateRandomPin() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let pin = '';
+    for (let i = 0; i < 6; i++) {
+      pin += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const kodeInput = document.getElementById('halaqahKode');
+    if (kodeInput) kodeInput.value = pin;
+  }
+
+  function fetchCoordinatesForRoom() {
+    if (!navigator.geolocation) {
+      if (userLocation.lat !== null) {
+        document.getElementById('halaqahLat').value = userLocation.lat;
+        document.getElementById('halaqahLng').value = userLocation.lng;
+        showToast('Koordinat disalin dari lokasi Anda! 📍', 'success');
+      } else {
+        showToast('Peramban tidak mendukung GPS.', 'warning');
+      }
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        document.getElementById('halaqahLat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('halaqahLng').value = pos.coords.longitude.toFixed(6);
+        showToast('Titik koordinat berhasil diambil! 📍', 'success');
+      },
+      () => {
+        if (userLocation.lat !== null) {
+          document.getElementById('halaqahLat').value = userLocation.lat;
+          document.getElementById('halaqahLng').value = userLocation.lng;
+          showToast('Koordinat diisi dari titik tersimpan Anda 📍', 'info');
+        } else {
+          showToast('Gagal mengambil titik GPS, silakan ketik manual.', 'warning');
+        }
+      }
+    );
+  }
+
+  function copyPin(code) {
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      showToast(`Kode PIN "${code}" berhasil disalin! 📋`, 'success');
+    }).catch(() => {
+      prompt('Salin kode PIN:', code);
+    });
+  }
+
+  // ── MODAL RUANG BELAJAR & PIN ──────────────────────────────
   function openNewHalaqahModal() {
     if (!session) {
-      showToast('Silakan masuk akun santri terlebih dahulu untuk membuat halaqah 🕌', 'info');
+      showToast('Silakan masuk akun santri terlebih dahulu untuk membuat ruang belajar 🕌', 'info');
       setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
       return;
     }
     document.getElementById('halaqahJudul').value = '';
     document.getElementById('halaqahMateri').value = '';
+    document.getElementById('halaqahFasilitator').value = session.name;
     document.getElementById('halaqahWaktu').value = '';
-    document.getElementById('halaqahMax').value = '8';
-    document.getElementById('halaqahLink').value = '';
+    document.getElementById('halaqahMax').value = '10';
+    document.getElementById('halaqahLinkOnline').value = '';
+    document.getElementById('halaqahLokasiNama').value = '';
+    document.getElementById('halaqahLat').value = userLocation.lat ? userLocation.lat.toFixed(6) : '';
+    document.getElementById('halaqahLng').value = userLocation.lng ? userLocation.lng.toFixed(6) : '';
     document.getElementById('halaqahDeskripsi').value = '';
+
+    const publicRadio = document.querySelector('input[name="halaqahAkses"][value="public"]');
+    if (publicRadio) { publicRadio.checked = true; toggleAksesFields('public'); }
+    const onlineRadio = document.querySelector('input[name="halaqahMode"][value="online"]');
+    if (onlineRadio) { onlineRadio.checked = true; toggleModeFields('online'); }
+
     openModal('halaqahModal');
+  }
+
+  function openJoinPinModal() {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu untuk bergabung via PIN 🔑', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
+    document.getElementById('inputPinAkses').value = '';
+    openModal('joinPinModal');
+  }
+
+  async function handleJoinByPin(e) {
+    e.preventDefault();
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu.', 'warning');
+      return;
+    }
+    const inputPin = document.getElementById('inputPinAkses').value.trim().toUpperCase();
+    const allRooms = await MisykahCloud.halaqah.getAll();
+    const targetRoom = allRooms.find(r => r.isPrivate && (r.kode || '').trim().toUpperCase() === inputPin);
+
+    if (!targetRoom) {
+      showToast('Kode PIN tidak cocok dengan ruang belajar manapun. Silakan periksa kembali!', 'error');
+      return;
+    }
+
+    const isJoined = targetRoom.participants && targetRoom.participants.includes(session.name);
+    if (isJoined) {
+      showToast(`Antum sudah terdaftar di ruang "${targetRoom.judul}"! 🎉`, 'info');
+      closeModal('joinPinModal');
+      return;
+    }
+
+    const res = await MisykahCloud.halaqah.joinWithCode(targetRoom.id, session.name, inputPin);
+    if (res.success) {
+      showToast(`Berhasil bergabung ke ruang "${targetRoom.judul}"! 🎉`, 'success');
+      closeModal('joinPinModal');
+      renderHalaqah();
+    } else {
+      showToast(res.reason === 'full' ? 'Kapasitas ruang belajar sudah penuh!' : 'Gagal bergabung ke ruang.', 'warning');
+    }
+  }
+
+  async function promptPinForRoom(id, roomTitle) {
+    if (!session) {
+      showToast('Silakan masuk akun santri terlebih dahulu 🔑', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
+    const inputPin = prompt(`Ruang "${roomTitle}" bersifat Privat.\nMasukkan Kode PIN Akses:`);
+    if (!inputPin) return;
+
+    const res = await MisykahCloud.halaqah.joinWithCode(id, session.name, inputPin.trim().toUpperCase());
+    if (res.success) {
+      showToast(`Berhasil bergabung ke ruang "${roomTitle}"! 🎉`, 'success');
+      renderHalaqah();
+    } else if (res.reason === 'wrong_code') {
+      showToast('Kode PIN salah. Silakan tanyakan kepada pengampu majelis!', 'error');
+    } else if (res.reason === 'full') {
+      showToast('Kapasitas ruang belajar sudah penuh!', 'warning');
+    } else {
+      showToast('Gagal bergabung ke ruang.', 'error');
+    }
   }
 
   async function handleCreateHalaqah(e) {
@@ -607,24 +1071,69 @@
     }
     const judul = document.getElementById('halaqahJudul').value.trim();
     const materi = document.getElementById('halaqahMateri').value.trim();
+    const fasilitator = document.getElementById('halaqahFasilitator').value.trim();
     const waktu = document.getElementById('halaqahWaktu').value.trim();
-    const max = parseInt(document.getElementById('halaqahMax').value) || 8;
-    const link = document.getElementById('halaqahLink').value.trim();
+    const max = parseInt(document.getElementById('halaqahMax').value) || 10;
     const status = document.getElementById('halaqahStatus').value;
     const deskripsi = document.getElementById('halaqahDeskripsi').value.trim();
 
+    const aksesEl = document.querySelector('input[name="halaqahAkses"]:checked');
+    const isPrivate = aksesEl ? (aksesEl.value === 'private') : false;
+    let kode = '';
+    if (isPrivate) {
+      kode = (document.getElementById('halaqahKode').value || '').trim().toUpperCase();
+      if (!kode) {
+        showToast('Wajib memasukkan kode PIN untuk ruang belajar privat!', 'warning');
+        return;
+      }
+    }
+
+    const modeEl = document.querySelector('input[name="halaqahMode"]:checked');
+    const mode = modeEl ? modeEl.value : 'online';
+    let link = '';
+    let locationName = '';
+    let lat = null;
+    let lng = null;
+
+    if (mode === 'online') {
+      link = (document.getElementById('halaqahLinkOnline').value || '').trim();
+    } else {
+      locationName = (document.getElementById('halaqahLokasiNama').value || '').trim();
+      const rawLat = document.getElementById('halaqahLat').value.trim();
+      const rawLng = document.getElementById('halaqahLng').value.trim();
+      if (rawLat && !isNaN(parseFloat(rawLat))) lat = parseFloat(rawLat);
+      if (rawLng && !isNaN(parseFloat(rawLng))) lng = parseFloat(rawLng);
+      link = locationName;
+    }
+
     const newHalaqah = {
       id: generateId(),
-      judul, materi, waktu, max, link, status, deskripsi,
-      creatorName: session.name,
+      judul,
+      materi,
+      waktu,
+      max,
+      link,
+      status,
+      deskripsi,
+      creatorName: fasilitator || session.name,
       creatorId: session.userId,
-      participants: [session.name]
+      participants: [session.name],
+      isPrivate,
+      kode,
+      mode,
+      lat,
+      lng,
+      locationName
     };
 
-    await MisykahCloud.halaqah.insert(newHalaqah);
-    closeModal('halaqahModal');
-    showToast('Ruang Halaqah berhasil dibuka! 🕌', 'success');
-    renderHalaqah();
+    try {
+      await MisykahCloud.halaqah.insert(newHalaqah);
+      closeModal('halaqahModal');
+      showToast('Ruang Belajar berhasil dibuka! 🕌', 'success');
+      renderHalaqah();
+    } catch(err) {
+      showToast('Gagal menyimpan ruang belajar', 'error');
+    }
   }
 
   async function toggleJoinHalaqah(id) {
@@ -635,74 +1144,195 @@
     }
     const res = await MisykahCloud.halaqah.toggleJoin(id, session.name);
     if (res === 'full') {
-      showToast('Kapasitas halaqah sudah penuh!', 'warning');
+      showToast('Kapasitas ruang belajar sudah penuh!', 'warning');
     } else {
-      showToast('Status keikutsertaan halaqah diperbarui! 🕌', 'success');
+      showToast('Status keikutsertaan diperbarui! 🕌', 'success');
     }
     renderHalaqah();
   }
 
   async function deleteHalaqah(id) {
-    if (!confirm('Yakin ingin menghapus ruang halaqah ini?')) return;
+    if (!confirm('Yakin ingin menghapus ruang belajar ini?')) return;
     await MisykahCloud.halaqah.delete(id);
-    showToast('Halaqah telah dihapus 🗑️', 'info');
+    showToast('Ruang belajar telah dihapus 🗑️', 'info');
     renderHalaqah();
   }
 
   async function clearAllHalaqah() {
-    if (!confirm('Yakin ingin menghapus SEMUA daftar halaqah yang ada?')) return;
+    if (!confirm('Yakin ingin menghapus SEMUA daftar ruang belajar yang ada?')) return;
     saveGlobalData('halaqah_rooms', []);
-    showToast('Semua halaqah telah dibersihkan', 'info');
+    showToast('Semua ruang belajar telah dibersihkan', 'info');
     renderHalaqah();
   }
 
+  // ── RENDER RUANG BELAJAR & SENSOR JARAK ────────────────────
   async function renderHalaqah() {
-    const list = await MisykahCloud.halaqah.getAll();
+    const rawList = await MisykahCloud.halaqah.getAll();
     const grid = document.getElementById('halaqahGrid');
     if (!grid) return;
 
-    if (list.length === 0) {
+    // Perkaya data dengan kalkulasi jarak jika offline dan userLocation aktif
+    const enrichedList = (rawList || []).map(h => {
+      let distKm = null;
+      const isOffline = (h.mode === 'offline');
+      if (isOffline && h.lat !== null && h.lng !== null && userLocation.lat !== null && userLocation.lng !== null) {
+        distKm = MisykahCloud.calculateDistanceKm(userLocation.lat, userLocation.lng, h.lat, h.lng);
+      }
+      return { ...h, distKm };
+    });
+
+    // Terapkan Filter
+    let filtered = enrichedList.filter(h => {
+      // Filter Jarak
+      if (currentDistanceFilter === 'online') {
+        if (h.mode !== 'online') return false;
+      } else if (typeof currentDistanceFilter === 'number') {
+        if (h.mode === 'online') return false;
+        if (h.distKm === null || h.distKm > currentDistanceFilter) return false;
+      }
+
+      // Filter Akses Privasi
+      if (currentPrivacyFilter === 'public' && h.isPrivate) return false;
+      if (currentPrivacyFilter === 'private' && !h.isPrivate) return false;
+
+      // Filter Pencarian
+      if (currentSearchQuery) {
+        const q = currentSearchQuery;
+        const match = (h.judul && h.judul.toLowerCase().includes(q)) ||
+                      (h.materi && h.materi.toLowerCase().includes(q)) ||
+                      (h.creatorName && h.creatorName.toLowerCase().includes(q)) ||
+                      (h.locationName && h.locationName.toLowerCase().includes(q)) ||
+                      (h.link && h.link.toLowerCase().includes(q));
+        if (!match) return false;
+      }
+
+      return true;
+    });
+
+    // Urutkan: Terdekat terlebih dahulu (jika ada jarak terhitung), lalu sesi aktif
+    filtered.sort((a, b) => {
+      if (a.distKm !== null && b.distKm !== null) return a.distKm - b.distKm;
+      if (a.distKm !== null) return -1;
+      if (b.distKm !== null) return 1;
+      return 0;
+    });
+
+    if (filtered.length === 0) {
       grid.innerHTML = `
         <div class="empty-state" style="grid-column: 1 / -1; padding: 40px 20px;">
           <span class="empty-icon">🕌</span>
-          <p style="font-weight:600;">Belum ada ruang halaqah aktif</p>
-          <button class="btn btn-primary btn-sm mt-2" onclick="openNewHalaqahModal()">+ Buat Halaqah Sekarang</button>
+          <p style="font-weight:600;">Tidak ada ruang belajar yang sesuai filter</p>
+          <span style="font-size:0.83rem;color:var(--text-muted);display:block;margin-top:4px;">
+            Coba ubah filter penjangka jarak, pilih "Semua", atau buka ruang belajar mandiri antum sekarang.
+          </span>
+          <button class="btn btn-primary btn-sm mt-3" onclick="openNewHalaqahModal()">+ Buka Ruang Belajar Baru</button>
         </div>`;
       return;
     }
 
-    grid.innerHTML = list.map(h => {
+    grid.innerHTML = filtered.map(h => {
       const isJoined = session && h.participants && h.participants.includes(session.name);
+      const isCreator = session && (h.creatorId === session.userId || h.creatorName === session.name);
       const statusLabel = h.status === 'ongoing' ? 'Sedang Berlangsung' : h.status === 'done' ? 'Selesai' : 'Akan Datang';
       const statusClass = h.status === 'ongoing' ? 'status-ongoing' : h.status === 'done' ? 'status-done' : 'status-upcoming';
+
+      // Badge Akses Privasi
+      const privacyBadge = h.isPrivate
+        ? `<span class="room-privacy-badge privacy-private">🔒 Privat (PIN)</span>`
+        : `<span class="room-privacy-badge privacy-public">🌐 Terbuka Publik</span>`;
+
+      // Badge Jarak / Mode Pertemuan
+      let distanceBadge = '';
+      if (h.mode === 'online') {
+        distanceBadge = `<span class="distance-badge-pill dist-online">🌐 Online Global</span>`;
+      } else if (h.distKm !== null) {
+        if (h.distKm <= 5) {
+          distanceBadge = `<span class="distance-badge-pill dist-near">🟢 ${h.distKm} km dari antum</span>`;
+        } else if (h.distKm <= 25) {
+          distanceBadge = `<span class="distance-badge-pill dist-medium">🟡 ${h.distKm} km dari antum</span>`;
+        } else {
+          distanceBadge = `<span class="distance-badge-pill dist-far">📍 ${h.distKm} km dari antum</span>`;
+        }
+      } else {
+        distanceBadge = `<span class="distance-badge-pill dist-far">🕌 Tatap Muka (Offline)</span>`;
+      }
+
+      // Link Online atau Maps Directions
+      let actionLinkHtml = '';
+      if (h.mode === 'online' && h.link && /^https?:\/\//i.test(h.link.trim())) {
+        const safeLink = escapeHtml(h.link.trim());
+        actionLinkHtml = `<div>💻 <strong>Tautan Sesi:</strong> <a href="${safeLink}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:underline;font-weight:600;">Masuk Majelis Online ↗</a></div>`;
+      } else if (h.mode === 'offline') {
+        const locTitle = escapeHtml(h.locationName || h.link || 'Lokasi Tatap Muka');
+        let mapLink = '';
+        if (h.lat !== null && h.lng !== null) {
+          mapLink = ` • <a href="https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600;text-decoration:underline;">🗺️ Rute Google Maps ↗</a>`;
+        }
+        actionLinkHtml = `<div>📍 <strong>Lokasi:</strong> <span>${locTitle}</span>${mapLink}</div>`;
+      }
 
       return `
         <div class="halaqah-card">
           <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="halaqah-status-pill ${statusClass}">${statusLabel}</span>
-              <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">👥 ${(h.participants || []).length}/${h.max} Santri</span>
+            <div class="flex items-center justify-between mb-2 flex-wrap gap-1">
+              <div class="flex items-center gap-1">
+                <span class="halaqah-status-pill ${statusClass}">${statusLabel}</span>
+                ${privacyBadge}
+              </div>
+              <div class="flex items-center gap-1">
+                ${distanceBadge}
+                <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">👥 ${(h.participants || []).length}/${h.max}</span>
+              </div>
             </div>
-            <h4 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:6px;">${escapeHtml(h.judul)}</h4>
-            <p style="font-size:0.83rem;color:var(--primary);font-weight:600;margin-bottom:8px;">📖 ${escapeHtml(h.materi)}</p>
-            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">
-              <div>⏰ <strong>Waktu:</strong> ${escapeHtml(h.waktu)}</div>
+
+            <h4 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:6px;font-weight:700;">${escapeHtml(h.judul)}</h4>
+            <p style="font-size:0.84rem;color:var(--primary);font-weight:600;margin-bottom:8px;">📖 ${escapeHtml(h.materi)}</p>
+
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;line-height:1.6;">
+              <div>⏰ <strong>Jadwal:</strong> ${escapeHtml(h.waktu)}</div>
               <div>👤 <strong>Fasilitator:</strong> ${escapeHtml(h.creatorName)}</div>
-              ${h.link ? `<div>📍 <strong>Lokasi/Link:</strong> <span style="color:var(--primary);">${escapeHtml(h.link)}</span></div>` : ''}
+              ${actionLinkHtml}
             </div>
+
             ${h.deskripsi ? `<p style="font-size:0.82rem;color:inherit;background:var(--cream-dark);padding:8px 10px;border-radius:6px;margin-bottom:10px;">${escapeHtml(h.deskripsi)}</p>` : ''}
 
-            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Peserta Terdaftar:</div>
+            <!-- Kotak Kode PIN jika antum anggota / pembuat ruang privat -->
+            ${(h.isPrivate && (isJoined || isCreator)) ? `
+              <div class="room-pin-box">
+                <div>
+                  <span style="color:var(--text-muted);font-size:0.75rem;display:block;">KODE AKSES PRIVAT:</span>
+                  <span class="pin-code-tag">${escapeHtml(h.kode || 'RAHASIA')}</span>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="copyPin('${escapeHtml(h.kode || '')}')" style="font-size:0.75rem;padding:3px 8px;">
+                  📋 Salin PIN
+                </button>
+              </div>
+            ` : ''}
+
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:10px;margin-bottom:4px;font-weight:600;">Peserta Terdaftar:</div>
             <div class="participant-list">
               ${(h.participants || []).map(p => `<span class="participant-chip">👤 ${escapeHtml(p)}</span>`).join('')}
             </div>
           </div>
 
           <div class="flex justify-between items-center mt-auto" style="border-top:1px solid var(--cream-dark);padding-top:12px;">
-            <button class="btn btn-sm ${isJoined ? 'btn-outline' : 'btn-primary'}" onclick="toggleJoinHalaqah('${h.id}')">
-              ${isJoined ? '✓ Terdaftar (Keluar)' : '🤝 Gabung Halaqah'}
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteHalaqah('${h.id}')" title="Hapus Halaqah">🗑️</button>
+            ${isJoined ? `
+              <div class="flex items-center gap-1">
+                <span class="text-success" style="font-size:0.82rem;font-weight:700;">✓ Terdaftar</span>
+                <button class="btn btn-outline btn-sm" onclick="toggleJoinHalaqah('${h.id}')" title="Keluar dari ruang">Keluar</button>
+              </div>
+            ` : h.isPrivate ? `
+              <button class="btn btn-primary btn-sm" onclick="promptPinForRoom('${h.id}', '${escapeHtml(h.judul)}')">
+                🔑 Masuk via Kode PIN
+              </button>
+            ` : `
+              <button class="btn btn-primary btn-sm" onclick="toggleJoinHalaqah('${h.id}')">
+                🤝 Gabung Ruang Belajar
+              </button>
+            `}
+            ${isCreator ? `
+              <button class="btn btn-danger btn-sm" onclick="deleteHalaqah('${h.id}')" title="Hapus Ruang Belajar">🗑️</button>
+            ` : ''}
           </div>
         </div>
       `;
@@ -952,7 +1582,8 @@
   }
 
   // Initial load
-  renderKelas();
+  updateUserLocationUI();
+  switchHalaqahTab('halaqah');
 </script>
 </body>
 </html>

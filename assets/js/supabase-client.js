@@ -33,24 +33,59 @@ const MisykahCloud = {
     return initSupabaseClient();
   },
 
+  // ── KALKULATOR JARAK GEOLOKASI (HAVERSINE FORMULA) ────────
+  calculateDistanceKm(lat1, lon1, lat2, lon2) {
+    if (lat1 === null || lon1 === null || lat2 === null || lon2 === null) return null;
+    const l1 = parseFloat(lat1);
+    const o1 = parseFloat(lon1);
+    const l2 = parseFloat(lat2);
+    const o2 = parseFloat(lon2);
+    if (isNaN(l1) || isNaN(o1) || isNaN(l2) || isNaN(o2)) return null;
+
+    const R = 6371; // Jari-jari bumi dalam kilometer
+    const dLat = (l2 - l1) * Math.PI / 180;
+    const dLon = (o2 - o1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(l1 * Math.PI / 180) * Math.cos(l2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const dist = R * c;
+    return Math.round(dist * 10) / 10; // 1 angka di belakang koma (contoh: 1.4 km)
+  },
+
   // ── FAIDAH ILMIAH ──────────────────────────────────────────
   faidah: {
     async getAll() {
       const client = initSupabaseClient();
+      const parseItem = (f) => {
+        const rawTags = Array.isArray(f.tags) ? f.tags : [];
+        const likes = rawTags.filter(t => typeof t === 'string' && t.startsWith('like:')).map(t => t.replace('like:', ''));
+        const comments = rawTags.filter(t => t && typeof t === 'object' && t.type === 'cmt');
+        const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:'));
+        return {
+          id: f.id,
+          userId: f.user_id || f.userId,
+          authorName: f.author_name || f.authorName,
+          judul: f.judul,
+          kategori: f.kategori,
+          arabicText: f.arabic_text || f.arabicText,
+          isi: f.isi,
+          sumber: f.sumber,
+          tags: cleanTags,
+          likes: likes,
+          likesCount: likes.length,
+          comments: comments,
+          commentsCount: comments.length,
+          isPinned: !!(f.is_pinned || f.isPinned),
+          tanggal: f.created_at ? f.created_at.split('T')[0] : (f.tanggal || todayStr())
+        };
+      };
+
       if (!client) {
         // Fallback lokal
         const local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
-        return local.map(f => {
-          const rawTags = Array.isArray(f.tags) ? f.tags : [];
-          const likes = rawTags.filter(t => typeof t === 'string' && t.startsWith('like:')).map(t => t.replace('like:', ''));
-          const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:'));
-          return {
-            ...f,
-            tags: cleanTags,
-            likes: likes,
-            likesCount: likes.length
-          };
-        });
+        return local.map(parseItem);
       }
       try {
         const { data, error } = await client
@@ -59,54 +94,33 @@ const MisykahCloud = {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return (data || []).map(f => {
-          const rawTags = Array.isArray(f.tags) ? f.tags : [];
-          const likes = rawTags.filter(t => typeof t === 'string' && t.startsWith('like:')).map(t => t.replace('like:', ''));
-          const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:'));
-          return {
-            id: f.id,
-            userId: f.user_id,
-            authorName: f.author_name,
-            judul: f.judul,
-            kategori: f.kategori,
-            arabicText: f.arabic_text,
-            isi: f.isi,
-            sumber: f.sumber,
-            tags: cleanTags,
-            likes: likes,
-            likesCount: likes.length,
-            isPinned: !!f.is_pinned,
-            tanggal: f.created_at ? f.created_at.split('T')[0] : todayStr()
-          };
-        });
+        return (data || []).map(parseItem);
       } catch (err) {
         console.warn('[Misykah Cloud] Faidah fetch error, fallback ke lokal:', err);
         const local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
-        return local.map(f => {
-          const rawTags = Array.isArray(f.tags) ? f.tags : [];
-          const likes = rawTags.filter(t => typeof t === 'string' && t.startsWith('like:')).map(t => t.replace('like:', ''));
-          const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:'));
-          return {
-            ...f,
-            tags: cleanTags,
-            likes: likes,
-            likesCount: likes.length
-          };
-        });
+        return local.map(parseItem);
       }
     },
 
     async insert(item) {
       const client = initSupabaseClient();
-      // Siapkan tags kombinasi (clean tags + likes)
-      const cleanTags = Array.isArray(item.tags) ? item.tags.filter(t => !t.startsWith('like:')) : [];
+      // Siapkan tags kombinasi (clean tags + likes + comments)
+      const cleanTags = Array.isArray(item.tags) ? item.tags.filter(t => typeof t === 'string' && !t.startsWith('like:')) : [];
       const likesList = Array.isArray(item.likes) ? item.likes.map(u => `like:${u}`) : [];
-      const combinedTags = [...cleanTags, ...likesList];
+      const commentsList = Array.isArray(item.comments) ? item.comments : [];
+      const combinedTags = [...cleanTags, ...likesList, ...commentsList];
 
       if (!client) {
         const local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
         const idx = local.findIndex(x => x.id === item.id);
-        const savedItem = { ...item, tags: cleanTags, likes: item.likes || [], likesCount: (item.likes || []).length };
+        const savedItem = { 
+          ...item, 
+          tags: cleanTags, 
+          likes: item.likes || [], 
+          likesCount: (item.likes || []).length,
+          comments: commentsList,
+          commentsCount: commentsList.length
+        };
         if (idx !== -1) local[idx] = savedItem;
         else local.unshift(savedItem);
         localStorage.setItem('misykah_guest_faidah', JSON.stringify(local));
@@ -131,6 +145,45 @@ const MisykahCloud = {
       } catch(err) {
         console.error('[Misykah Cloud] Faidah upsert error:', err);
         throw err;
+      }
+    },
+
+    async addComment(id, comment) {
+      const client = initSupabaseClient();
+      const newCmt = {
+        type: 'cmt',
+        id: generateId(),
+        author: comment.author || 'Santri Misykah',
+        authorId: comment.authorId || null,
+        text: comment.text,
+        time: todayStr()
+      };
+
+      if (!client) {
+        let local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
+        const f = local.find(x => x.id === id);
+        if (f) {
+          if (!Array.isArray(f.comments)) f.comments = [];
+          f.comments.push(newCmt);
+          f.commentsCount = f.comments.length;
+          localStorage.setItem('misykah_guest_faidah', JSON.stringify(local));
+        }
+        return newCmt;
+      }
+
+      try {
+        const { data: current, error: fetchErr } = await client.from('faidah').select('tags').eq('id', id).single();
+        if (fetchErr) throw fetchErr;
+
+        let tags = (current && Array.isArray(current.tags)) ? [...current.tags] : [];
+        tags.push(newCmt);
+
+        const { error: updateErr } = await client.from('faidah').update({ tags }).eq('id', id);
+        if (updateErr) throw updateErr;
+        return newCmt;
+      } catch(e) {
+        console.error('[Misykah Cloud] Faidah addComment error:', e);
+        return false;
       }
     },
 
@@ -272,11 +325,69 @@ const MisykahCloud = {
     }
   },
 
-  // ── RUANG HALAQAH ──────────────────────────────────────────
+  // ── RUANG HALAQAH & BELAJAR MANDIRI (PUBLIK / PRIVAT PIN + RANGE JARAK) ────
   halaqah: {
+    _parseMetadata(rawDeskripsi, rawLink) {
+      let cleanDeskripsi = (rawDeskripsi || '').trim();
+      let meta = {
+        isPrivate: false,
+        kode: '',
+        mode: (rawLink && /^https?:\/\//i.test((rawLink || '').trim())) ? 'online' : 'offline',
+        lat: null,
+        lng: null,
+        locationName: ''
+      };
+
+      const match = cleanDeskripsi.match(/<!--misykah_meta:(\{.*?\})-->/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(match[1]);
+          meta = Object.assign(meta, parsed);
+          cleanDeskripsi = cleanDeskripsi.replace(match[0], '').trim();
+        } catch(e) {}
+      }
+      return { deskripsi: cleanDeskripsi, meta };
+    },
+
+    _encodeMetadata(deskripsi, meta) {
+      const cleanDesc = (deskripsi || '').replace(/<!--misykah_meta:\{.*?\}-->/g, '').trim();
+      const metaObj = {
+        isPrivate: !!meta.isPrivate,
+        kode: meta.kode ? String(meta.kode).trim().toUpperCase() : '',
+        mode: meta.mode || 'online',
+        lat: (meta.lat !== null && meta.lat !== undefined && meta.lat !== '') ? parseFloat(meta.lat) : null,
+        lng: (meta.lng !== null && meta.lng !== undefined && meta.lng !== '') ? parseFloat(meta.lng) : null,
+        locationName: meta.locationName ? String(meta.locationName).trim() : ''
+      };
+      return cleanDesc + '\n<!--misykah_meta:' + JSON.stringify(metaObj) + '-->';
+    },
+
     async getAll() {
       const client = initSupabaseClient();
-      if (!client) return getGlobalData('halaqah_rooms');
+      if (!client) {
+        const local = getGlobalData('halaqah_rooms') || [];
+        return local.map(h => {
+          const parsed = this._parseMetadata(h.deskripsi, h.link);
+          return {
+            id: h.id,
+            judul: h.judul,
+            materi: h.materi,
+            waktu: h.waktu,
+            max: h.max || h.max_participants || 8,
+            link: h.link,
+            status: h.status || 'upcoming',
+            deskripsi: parsed.deskripsi,
+            creatorName: h.creatorName || h.creator_name,
+            participants: h.participants || [],
+            isPrivate: h.isPrivate !== undefined ? h.isPrivate : parsed.meta.isPrivate,
+            kode: h.kode || parsed.meta.kode,
+            mode: h.mode || parsed.meta.mode,
+            lat: (h.lat !== undefined && h.lat !== null) ? h.lat : parsed.meta.lat,
+            lng: (h.lng !== undefined && h.lng !== null) ? h.lng : parsed.meta.lng,
+            locationName: h.locationName || parsed.meta.locationName
+          };
+        });
+      }
       try {
         const { data, error } = await client
           .from('halaqah')
@@ -284,29 +395,58 @@ const MisykahCloud = {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return (data || []).map(h => ({
-          id: h.id,
-          judul: h.judul,
-          materi: h.materi,
-          waktu: h.waktu,
-          max: h.max_participants || 8,
-          link: h.link,
-          status: h.status || 'upcoming',
-          deskripsi: h.deskripsi,
-          creatorName: h.creator_name,
-          participants: h.participants || []
-        }));
+        return (data || []).map(h => {
+          const parsed = this._parseMetadata(h.deskripsi, h.link);
+          return {
+            id: h.id,
+            judul: h.judul,
+            materi: h.materi,
+            waktu: h.waktu,
+            max: h.max_participants || 8,
+            link: h.link,
+            status: h.status || 'upcoming',
+            deskripsi: parsed.deskripsi,
+            creatorName: h.creator_name,
+            participants: h.participants || [],
+            isPrivate: parsed.meta.isPrivate,
+            kode: parsed.meta.kode,
+            mode: parsed.meta.mode,
+            lat: parsed.meta.lat,
+            lng: parsed.meta.lng,
+            locationName: parsed.meta.locationName
+          };
+        });
       } catch(err) {
         console.warn('[Misykah Cloud] Halaqah fetch error:', err);
-        return getGlobalData('halaqah_rooms');
+        return getGlobalData('halaqah_rooms') || [];
       }
     },
 
     async insert(item) {
       const client = initSupabaseClient();
+      const meta = {
+        isPrivate: !!item.isPrivate,
+        kode: item.kode || '',
+        mode: item.mode || 'online',
+        lat: item.lat,
+        lng: item.lng,
+        locationName: item.locationName || ''
+      };
+      const encodedDeskripsi = this._encodeMetadata(item.deskripsi, meta);
+
       if (!client) {
-        const local = getGlobalData('halaqah_rooms');
-        local.unshift(item);
+        const local = getGlobalData('halaqah_rooms') || [];
+        const toSave = {
+          ...item,
+          deskripsi: encodedDeskripsi,
+          isPrivate: meta.isPrivate,
+          kode: meta.kode,
+          mode: meta.mode,
+          lat: meta.lat,
+          lng: meta.lng,
+          locationName: meta.locationName
+        };
+        local.unshift(toSave);
         saveGlobalData('halaqah_rooms', local);
         return item;
       }
@@ -318,7 +458,7 @@ const MisykahCloud = {
         max_participants: item.max,
         link: item.link || null,
         status: item.status || 'upcoming',
-        deskripsi: item.deskripsi || null,
+        deskripsi: encodedDeskripsi,
         creator_name: item.creatorName,
         participants: item.participants || []
       };
@@ -330,13 +470,14 @@ const MisykahCloud = {
     async toggleJoin(id, studentName, max) {
       const client = initSupabaseClient();
       if (!client) {
-        let local = getGlobalData('halaqah_rooms');
+        let local = getGlobalData('halaqah_rooms') || [];
         const h = local.find(x => x.id === id);
         if (!h) return false;
+        if (!Array.isArray(h.participants)) h.participants = [];
         const idx = h.participants.indexOf(studentName);
         if (idx !== -1) h.participants.splice(idx, 1);
         else {
-          if (h.participants.length >= (max || h.max)) return 'full';
+          if (h.participants.length >= (max || h.max || 8)) return 'full';
           h.participants.push(studentName);
         }
         saveGlobalData('halaqah_rooms', local);
@@ -356,10 +497,53 @@ const MisykahCloud = {
       return true;
     },
 
+    async joinWithCode(id, studentName, inputCode) {
+      const client = initSupabaseClient();
+      const codeClean = (inputCode || '').trim().toUpperCase();
+
+      if (!client) {
+        let local = getGlobalData('halaqah_rooms') || [];
+        const h = local.find(x => x.id === id);
+        if (!h) return { success: false, reason: 'not_found' };
+        const parsed = this._parseMetadata(h.deskripsi, h.link);
+        const expectedCode = (h.kode || parsed.meta.kode || '').trim().toUpperCase();
+        if (expectedCode && expectedCode !== codeClean) {
+          return { success: false, reason: 'wrong_code' };
+        }
+        if (!Array.isArray(h.participants)) h.participants = [];
+        if (h.participants.length >= (h.max || 8)) return { success: false, reason: 'full' };
+        if (!h.participants.includes(studentName)) {
+          h.participants.push(studentName);
+          saveGlobalData('halaqah_rooms', local);
+        }
+        return { success: true };
+      }
+
+      try {
+        const { data: h, error } = await client.from('halaqah').select('*').eq('id', id).single();
+        if (error || !h) return { success: false, reason: 'not_found' };
+        const parsed = this._parseMetadata(h.deskripsi, h.link);
+        const expectedCode = (parsed.meta.kode || '').trim().toUpperCase();
+        if (expectedCode && expectedCode !== codeClean) {
+          return { success: false, reason: 'wrong_code' };
+        }
+        const list = h.participants || [];
+        if (list.length >= (h.max_participants || 8)) return { success: false, reason: 'full' };
+        if (!list.includes(studentName)) {
+          list.push(studentName);
+          await client.from('halaqah').update({ participants: list }).eq('id', id);
+        }
+        return { success: true };
+      } catch(err) {
+        console.error('[Misykah Cloud] joinWithCode error:', err);
+        return { success: false, reason: 'error' };
+      }
+    },
+
     async delete(id) {
       const client = initSupabaseClient();
       if (!client) {
-        saveGlobalData('halaqah_rooms', getGlobalData('halaqah_rooms').filter(x => x.id !== id));
+        saveGlobalData('halaqah_rooms', (getGlobalData('halaqah_rooms') || []).filter(x => x.id !== id));
         return true;
       }
       const { error } = await client.from('halaqah').delete().eq('id', id);
