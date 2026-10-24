@@ -79,22 +79,30 @@
     <!-- Actions & Filter Bar -->
     <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
       <div class="flex items-center gap-1 flex-wrap" style="flex:1;min-width:280px;">
-        <input type="text" id="searchInput" class="form-control" style="max-width:300px;" placeholder="🔍 Cari faidah, ayat, kitab, topik..." oninput="renderFaidah()">
-        <select id="categoryFilter" class="form-control" style="max-width:200px;" onchange="renderFaidah()">
-          <option value="">Semua Kategori</option>
+        <input type="text" id="searchInput" class="form-control" style="max-width:280px;" placeholder="🔍 Cari judul, materi, santri, topik..." oninput="renderFaidah()">
+        <select id="categoryFilter" class="form-control" style="max-width:220px;" onchange="renderFaidah()">
+          <option value="">Semua Kategori (Semua Topik)</option>
           <option value="Al-Qur'an & Tafsir">Al-Qur'an & Tafsir</option>
           <option value="Hadits & Sunnah">Hadits & Sunnah</option>
           <option value="Aqidah">Aqidah</option>
           <option value="Fiqh">Fiqh</option>
           <option value="Bahasa Arab">Bahasa Arab</option>
           <option value="Tazkiyah & Adab">Tazkiyah & Adab</option>
+          <option value="Nasehat & Motivasi">Nasehat & Motivasi</option>
+          <option value="Kiat Menghafal & Belajar">Kiat Menghafal & Belajar</option>
           <option value="Faidah Muhadharah">Faidah Muhadharah</option>
           <option value="Catatan Buku">Catatan Buku</option>
-          <option value="Lainnya">Lainnya</option>
         </select>
-        <button id="btnFavFilter" class="btn btn-outline btn-sm" onclick="toggleFavFilter()">⭐ Favorit Saja</button>
       </div>
-      <button class="btn btn-primary" onclick="openAddModal()">✨ + Catat Faidah Baru</button>
+      <button class="btn btn-primary" onclick="openAddModal()">✨ + Bagikan Faidah Baru</button>
+    </div>
+
+    <!-- Quick Filter Tabs -->
+    <div class="faidah-filter-tabs">
+      <button class="faidah-tab-btn active" id="tab-all" onclick="setFaidahTab('all')">🌐 Semua Faidah</button>
+      <button class="faidah-tab-btn" id="tab-popular" onclick="setFaidahTab('popular')">🔥 Paling Bermanfaat</button>
+      <button class="faidah-tab-btn" id="tab-my" onclick="setFaidahTab('my')">✍️ Faidah Saya</button>
+      <button class="faidah-tab-btn" id="tab-fav" onclick="setFaidahTab('fav')">⭐ Pilihan / Favorit</button>
     </div>
 
     <!-- Stats Bar -->
@@ -131,31 +139,44 @@
 
 <!-- Modal Tambah/Edit Faidah -->
 <div class="modal-overlay" id="faidahModal">
-  <div class="modal" style="max-width:560px;">
+  <div class="modal" style="max-width:580px;">
     <div class="modal-header">
-      <div class="modal-title" id="modalTitle">✨ Catat Faidah Ilmu</div>
+      <div class="modal-title" id="modalTitle">✨ Bagikan Faidah Ilmu</div>
       <button class="modal-close" onclick="closeModal('faidahModal')">✕</button>
     </div>
     <form onsubmit="handleSaveFaidah(event)">
       <input type="hidden" id="faidahId">
+
+      <div id="authorNotice" style="background:rgba(26,92,56,0.06);border-left:3px solid var(--primary);padding:8px 12px;border-radius:4px;font-size:0.8rem;color:var(--primary-dark);margin-bottom:14px;">
+        ✍️ Faidah ini akan dibagikan atas nama santri: <strong id="modalAuthorName">Santri</strong>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Judul Faidah *</label>
-        <input type="text" id="faidahJudul" class="form-control" placeholder="Contoh: Makna Cahaya di Atas Cahaya" required>
+        <input type="text" id="faidahJudul" class="form-control" placeholder="Contoh: Makna Cahaya di Atas Cahaya / Kiat Mengulang Hafalan" required>
       </div>
+
       <div class="form-group">
-        <label class="form-label">Kategori *</label>
-        <select id="faidahKategori" class="form-control" required>
+        <label class="form-label">Kategori / Bidang Ilmu *</label>
+        <select id="faidahKategori" class="form-control" onchange="handleKategoriChange()" required>
           <option value="Al-Qur'an & Tafsir">Al-Qur'an & Tafsir</option>
           <option value="Hadits & Sunnah">Hadits & Sunnah</option>
           <option value="Aqidah">Aqidah</option>
           <option value="Fiqh">Fiqh</option>
           <option value="Bahasa Arab">Bahasa Arab</option>
           <option value="Tazkiyah & Adab">Tazkiyah & Adab</option>
+          <option value="Nasehat & Motivasi">Nasehat & Motivasi</option>
+          <option value="Kiat Menghafal & Belajar">Kiat Menghafal & Belajar</option>
           <option value="Faidah Muhadharah">Faidah Muhadharah</option>
           <option value="Catatan Buku">Catatan Buku</option>
-          <option value="Lainnya">Lainnya</option>
+          <option value="Kisah Salaf & Tarikh">Kisah Salaf & Tarikh</option>
+          <option value="__custom__">✨ + Tulis Kategori Sendiri (Bebas)...</option>
         </select>
+        <div id="customKategoriWrap" style="display:none;margin-top:8px;">
+          <input type="text" id="faidahKategoriCustom" class="form-control" placeholder="Tuliskan nama kategori bebas (contoh: Biografi Ulama, Adab Majelis, Coding Islami)...">
+        </div>
       </div>
+
       <div class="form-group">
         <label class="form-label">Kutipan Teks Arab / Dalil (Opsional)</label>
         <textarea id="faidahArabic" class="form-control font-arabic" rows="2" style="font-size:1.15rem;direction:rtl;" placeholder="أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ"></textarea>
@@ -165,22 +186,22 @@
         <textarea id="faidahIsi" class="form-control" rows="4" placeholder="Tuliskan hikmah, pelajaran, atau intisari ilmu yang Anda peroleh..." required></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">Sumber / Rujukan</label>
-        <input type="text" id="faidahSumber" class="form-control" placeholder="Contoh: Tafsir As-Sa'di hal. 560 / Kajian Ustadz Firanda">
+        <label class="form-label">Sumber / Rujukan (Buku, Asatidzah, Kajian)</label>
+        <input type="text" id="faidahSumber" class="form-control" placeholder="Contoh: Tafsir As-Sa'di hal. 560 / Faidah Kajian Ustadz Firanda">
       </div>
       <div class="form-group">
         <label class="form-label">Kata Kunci / Tagar (Pisahkan dengan koma)</label>
-        <input type="text" id="faidahTags" class="form-control" placeholder="Contoh: hidayah, ilmu, tahfidz">
+        <input type="text" id="faidahTags" class="form-control" placeholder="Contoh: hidayah, ilmu, tahfidz, tadabbur">
       </div>
       <div class="form-group">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;">
           <input type="checkbox" id="faidahPin" style="width:16px;height:16px;accent-color:var(--gold);">
-          <span>⭐ Jadikan Faidah Favorit / Sematkan di Atas</span>
+          <span>⭐ Sematkan di Atas / Jadikan Faidah Pilihan</span>
         </label>
       </div>
       <div class="flex justify-between gap-1 mt-3">
         <button type="button" class="btn btn-outline" onclick="closeModal('faidahModal')">Batal</button>
-        <button type="submit" class="btn btn-primary">💾 Simpan Faidah</button>
+        <button type="submit" class="btn btn-primary">🚀 Bagikan Faidah ke Santri</button>
       </div>
     </form>
   </div>
@@ -221,8 +242,28 @@
   // Render Cloud connection status pill
   MisykahCloud.renderCloudBadge('cloudStatusBadge');
 
-  let onlyFav = false;
+  let currentTab = 'all';
   let cachedFaidah = [];
+
+  function setFaidahTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.faidah-tab-btn').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.getElementById(`tab-${tab}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    renderFaidah();
+  }
+
+  function handleKategoriChange() {
+    const sel = document.getElementById('faidahKategori').value;
+    const wrap = document.getElementById('customKategoriWrap');
+    if (sel === '__custom__') {
+      wrap.style.display = 'block';
+      const input = document.getElementById('faidahKategoriCustom');
+      if (input) input.focus();
+    } else {
+      wrap.style.display = 'none';
+    }
+  }
 
   function getFaidahStorageKey() {
     return session ? `misykah_faidah_${session.userId}` : 'misykah_guest_faidah';
@@ -255,6 +296,8 @@
           isi: 'Ibnu Katsir dan mayoritas ahli tafsir menjelaskan bahwa "Misykah" (مشكاة) adalah lubang di dinding tempat diletakkannya lentera/pelita yang memantulkan dan mengumpulkan cahaya sehingga cahayanya menjadi sangat terang benderang. Inilah perumpamaan cahaya iman dan ilmu di dalam dada seorang mukmin.',
           sumber: 'Tafsir Al-Qur\'an Al-\'Azhim (Surah An-Nur: 35)',
           tags: ['misykah', 'cahaya', 'iman', 'tafsir'],
+          likes: ['adm_1', 'usr_seed'],
+          likesCount: 2,
           isPinned: true,
           tanggal: todayStr()
         },
@@ -266,6 +309,8 @@
           isi: 'Nasihat Imam Asy-Syafi\'i: Menjauhi maksiat, memperbanyak murojaah di waktu sepi (qiyamul lail/subuh), dan mentadabburi maknanya sebelum menghafalkannya. Ilmu adalah cahaya, dan cahaya Allah tidak diberikan kepada pelaku maksiat.',
           sumber: 'Diwan Al-Imam Asy-Syafi\'i',
           tags: ['tahfidz', 'adab', 'murojaah'],
+          likes: ['adm_1'],
+          likesCount: 1,
           isPinned: true,
           tanggal: todayStr()
         },
@@ -277,6 +322,8 @@
           isi: 'Tidaklah suatu kaum berkumpul di rumah Allah membaca Al-Qur\'an dan saling mempelajarinya (bertadarus) melainkan akan turun ketenangan, diliputi rahmat, dinaungi malaikat, dan dibanggakan Allah di hadapan makhluk di sisi-Nya.',
           sumber: 'H.R. Muslim no. 2699',
           tags: ['halaqah', 'belajar', 'tadarus'],
+          likes: [],
+          likesCount: 0,
           isPinned: false,
           tanggal: todayStr()
         }
@@ -300,7 +347,47 @@
       }
       cachedFaidah = local;
     }
+    syncCategoryDropdown();
     renderFaidah();
+  }
+
+  // Populate any custom categories into filter select dynamically
+  function syncCategoryDropdown() {
+    const filterEl = document.getElementById('categoryFilter');
+    if (!filterEl) return;
+    const currentVal = filterEl.value;
+    const standardCats = new Set([
+      "Al-Qur'an & Tafsir", "Hadits & Sunnah", "Aqidah", "Fiqh",
+      "Bahasa Arab", "Tazkiyah & Adab", "Nasehat & Motivasi",
+      "Kiat Menghafal & Belajar", "Faidah Muhadharah", "Catatan Buku",
+      "Kisah Salaf & Tarikh", "Lainnya"
+    ]);
+
+    const customCats = new Set();
+    cachedFaidah.forEach(f => {
+      if (f.kategori && !standardCats.has(f.kategori)) {
+        customCats.add(f.kategori);
+      }
+    });
+
+    // Remove previous dynamic options
+    const options = Array.from(filterEl.options);
+    options.forEach(opt => {
+      if (opt.getAttribute('data-dynamic') === 'true') {
+        filterEl.removeChild(opt);
+      }
+    });
+
+    // Append dynamic ones
+    customCats.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = `🏷️ ${cat}`;
+      opt.setAttribute('data-dynamic', 'true');
+      filterEl.appendChild(opt);
+    });
+
+    if (currentVal) filterEl.value = currentVal;
   }
 
   // Subscribe to real-time changes if Supabase is active
@@ -310,29 +397,19 @@
     });
   }
 
-  function toggleFavFilter() {
-    onlyFav = !onlyFav;
-    const btn = document.getElementById('btnFavFilter');
-    if (onlyFav) {
-      btn.classList.remove('btn-outline');
-      btn.classList.add('btn-primary');
-    } else {
-      btn.classList.add('btn-outline');
-      btn.classList.remove('btn-primary');
-    }
-    renderFaidah();
-  }
-
   function openAddModal() {
     if (!session) {
-      showToast('Silakan masuk akun santri untuk mencatat faidah pribadi Anda 🌿', 'info');
+      showToast('Silakan masuk akun santri untuk membagikan faidah ilmu 🌿', 'info');
       setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
       return;
     }
-    document.getElementById('modalTitle').textContent = '✨ Catat Faidah Ilmu';
+    document.getElementById('modalTitle').textContent = '✨ Bagikan Faidah Ilmu';
     document.getElementById('faidahId').value = '';
+    document.getElementById('modalAuthorName').textContent = session.name || 'Santri Misykah';
     document.getElementById('faidahJudul').value = '';
     document.getElementById('faidahKategori').value = 'Al-Qur\'an & Tafsir';
+    document.getElementById('customKategoriWrap').style.display = 'none';
+    document.getElementById('faidahKategoriCustom').value = '';
     document.getElementById('faidahArabic').value = '';
     document.getElementById('faidahIsi').value = '';
     document.getElementById('faidahSumber').value = '';
@@ -350,10 +427,35 @@
     const item = cachedFaidah.find(f => f.id === id);
     if (!item) return;
 
+    const isOwner = (item.userId && item.userId === session.userId) || (item.authorName && item.authorName === session.name);
+    const isAdmin = session.role === 'admin' || session.role === 'ustadz';
+    if (!isOwner && !isAdmin) {
+      showToast('Hanya penulis yang berhak mengubah faidah ini.', 'warning');
+      return;
+    }
+
     document.getElementById('modalTitle').textContent = '✏️ Edit Faidah Ilmu';
     document.getElementById('faidahId').value = item.id;
+    document.getElementById('modalAuthorName').textContent = item.authorName || session.name;
     document.getElementById('faidahJudul').value = item.judul;
-    document.getElementById('faidahKategori').value = item.kategori;
+
+    const catSelect = document.getElementById('faidahKategori');
+    let hasOption = false;
+    for (let i = 0; i < catSelect.options.length; i++) {
+      if (catSelect.options[i].value === item.kategori) {
+        hasOption = true;
+        break;
+      }
+    }
+    if (hasOption) {
+      catSelect.value = item.kategori;
+      document.getElementById('customKategoriWrap').style.display = 'none';
+    } else {
+      catSelect.value = '__custom__';
+      document.getElementById('customKategoriWrap').style.display = 'block';
+      document.getElementById('faidahKategoriCustom').value = item.kategori;
+    }
+
     document.getElementById('faidahArabic').value = item.arabicText || '';
     document.getElementById('faidahIsi').value = item.isi;
     document.getElementById('faidahSumber').value = item.sumber || '';
@@ -365,12 +467,16 @@
   async function handleSaveFaidah(e) {
     e.preventDefault();
     if (!session) {
-      showToast('Silakan masuk akun santri untuk menyimpan faidah pribadi.', 'warning');
+      showToast('Silakan masuk akun santri untuk menyimpan faidah.', 'warning');
       return;
     }
     const id = document.getElementById('faidahId').value || generateId();
     const judul = document.getElementById('faidahJudul').value.trim();
-    const kategori = document.getElementById('faidahKategori').value;
+    let kategori = document.getElementById('faidahKategori').value;
+    if (kategori === '__custom__') {
+      const custom = document.getElementById('faidahKategoriCustom').value.trim();
+      kategori = custom || 'Faidah Umum';
+    }
     const arabicText = document.getElementById('faidahArabic').value.trim();
     const isi = document.getElementById('faidahIsi').value.trim();
     const sumber = document.getElementById('faidahSumber').value.trim();
@@ -378,28 +484,34 @@
     const isPinned = document.getElementById('faidahPin').checked;
     const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
 
+    const oldItem = cachedFaidah.find(f => f.id === id);
+    const existingLikes = oldItem && Array.isArray(oldItem.likes) ? oldItem.likes : [];
+
     const item = {
       id,
-      userId: session.userId,
-      authorName: session.name,
+      userId: oldItem ? (oldItem.userId || session.userId) : session.userId,
+      authorName: oldItem ? (oldItem.authorName || session.name) : session.name,
       judul,
       kategori,
       arabicText,
       isi,
       sumber,
       tags,
+      likes: existingLikes,
+      likesCount: existingLikes.length,
       isPinned,
-      tanggal: todayStr()
+      tanggal: oldItem ? (oldItem.tanggal || todayStr()) : todayStr()
     };
 
     if (MisykahCloud.isReady()) {
       try {
         await MisykahCloud.faidah.insert(item);
-        showToast('Faidah tersinkronisasi ke Cloud Supabase! ☁️', 'success');
+        showToast('Faidah tersiar ke seluruh santri di Cloud! ☁️✨', 'success');
       } catch(err) {
-        showToast('Tersimpan di lokal (Cloud gagal terhubung)', 'info');
+        showToast('Tersimpan di lokal (Cloud sedang sibuk)', 'info');
         let list = getFaidahList();
-        list.unshift(item);
+        const idx = list.findIndex(x => x.id === id);
+        if (idx !== -1) list[idx] = item; else list.unshift(item);
         saveFaidahList(list);
       }
     } else {
@@ -415,12 +527,59 @@
     loadAllFaidah();
   }
 
+  async function toggleFaidahLike(id) {
+    if (!session) {
+      showToast('Masuk akun santri untuk memberi tanda apresiasi Bermanfaat 🤲', 'info');
+      return;
+    }
+    const myId = session.userId || ('usr_' + session.name);
+    
+    // Optimistic UI update
+    const item = cachedFaidah.find(f => f.id === id);
+    if (item) {
+      if (!Array.isArray(item.likes)) item.likes = [];
+      const idx = item.likes.indexOf(myId);
+      if (idx !== -1) {
+        item.likes.splice(idx, 1);
+        showToast('Tanda apresiasi dibatalkan', 'info');
+      } else {
+        item.likes.push(myId);
+        showToast('Jazakallahu khairan! Apresiasi terkirim 🤲', 'success');
+      }
+      item.likesCount = item.likes.length;
+      renderFaidah();
+    }
+
+    if (MisykahCloud.isReady()) {
+      await MisykahCloud.faidah.toggleLike(id, myId);
+    } else {
+      let list = getFaidahList();
+      const f = list.find(x => x.id === id);
+      if (f) {
+        if (!Array.isArray(f.likes)) f.likes = [];
+        const idx = f.likes.indexOf(myId);
+        if (idx !== -1) f.likes.splice(idx, 1); else f.likes.push(myId);
+        f.likesCount = f.likes.length;
+        saveFaidahList(list);
+      }
+    }
+  }
+
   async function deleteFaidah(id) {
     if (!session) {
       showToast('Silakan masuk akun santri untuk mengelola faidah.', 'warning');
       return;
     }
-    if (!confirm('Yakin ingin menghapus catatan faidah ini?')) return;
+    const item = cachedFaidah.find(f => f.id === id);
+    if (item) {
+      const isOwner = (item.userId && item.userId === session.userId) || (item.authorName && item.authorName === session.name);
+      const isAdmin = session.role === 'admin' || session.role === 'ustadz';
+      if (!isOwner && !isAdmin) {
+        showToast('Hanya penulis yang berhak menghapus faidah ini.', 'warning');
+        return;
+      }
+    }
+    if (!confirm('Yakin ingin menghapus catatan faidah ini dari papan publik?')) return;
 
     if (MisykahCloud.isReady()) {
       await MisykahCloud.faidah.delete(id);
@@ -462,7 +621,8 @@
     if (item.arabicText) text += `${item.arabicText}\n\n`;
     text += `${item.isi}\n\n`;
     if (item.sumber) text += `📚 Sumber: ${item.sumber}\n`;
-    text += `\n— Dicatat di (مشكاة)`;
+    if (item.authorName) text += `✍️ Penulis: ${item.authorName}\n`;
+    text += `\n— Dibagikan melalui (مشكاة) https://misykah.vercel.app/`;
 
     navigator.clipboard.writeText(text).then(() => {
       showToast('Teks Faidah berhasil disalin ke clipboard! 📋', 'success');
@@ -473,8 +633,9 @@
 
   function renderFaidah() {
     const list = cachedFaidah;
-    const search = document.getElementById('searchInput').value.toLowerCase();
+    const search = (document.getElementById('searchInput').value || '').toLowerCase();
     const category = document.getElementById('categoryFilter').value;
+    const myId = session ? (session.userId || ('usr_' + session.name)) : null;
 
     // Update Stats
     document.getElementById('totalFaidah').textContent = list.length;
@@ -485,16 +646,33 @@
     let filtered = list.filter(f => {
       const matchSearch = (f.judul || '').toLowerCase().includes(search) ||
                           (f.isi || '').toLowerCase().includes(search) ||
+                          (f.authorName || '').toLowerCase().includes(search) ||
+                          (f.kategori || '').toLowerCase().includes(search) ||
                           (f.arabicText && f.arabicText.includes(search)) ||
                           (f.sumber && f.sumber.toLowerCase().includes(search)) ||
                           (f.tags && f.tags.some(t => t.toLowerCase().includes(search)));
       const matchCat = !category || f.kategori === category;
-      const matchFav = !onlyFav || f.isPinned;
-      return matchSearch && matchCat && matchFav;
+
+      let matchTab = true;
+      if (currentTab === 'popular') {
+        matchTab = true; // Akan diurutkan berdasarkan likes terbanyak
+      } else if (currentTab === 'my') {
+        if (!session) matchTab = false;
+        else matchTab = (f.userId === session.userId) || (f.authorName === session.name);
+      } else if (currentTab === 'fav') {
+        matchTab = !!f.isPinned;
+      }
+
+      return matchSearch && matchCat && matchTab;
     });
 
-    // Urutkan: Pinned di atas, lalu tanggal terbaru
+    // Urutkan daftar
     filtered.sort((a, b) => {
+      if (currentTab === 'popular') {
+        const likeA = a.likesCount || (a.likes ? a.likes.length : 0);
+        const likeB = b.likesCount || (b.likes ? b.likes.length : 0);
+        if (likeB !== likeA) return likeB - likeA;
+      }
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return String(b.id).localeCompare(String(a.id));
@@ -503,51 +681,82 @@
     const container = document.getElementById('faidahContainer');
 
     if (filtered.length === 0) {
+      let emptyMsg = 'Belum ada faidah yang cocok';
+      let emptySub = 'Mulai bagikan faidah ilmu baru dengan menekan tombol di atas.';
+      if (currentTab === 'my') {
+        emptyMsg = 'Anda belum membagikan faidah';
+        emptySub = 'Tekan tombol "+ Bagikan Faidah Baru" untuk menuliskan catatan ilmu Anda.';
+      } else if (currentTab === 'fav') {
+        emptyMsg = 'Belum ada faidah pilihan';
+        emptySub = 'Tandai bintang ⭐ pada faidah yang paling menyentuh untuk menyematkannya.';
+      }
+
       container.innerHTML = `
         <div class="empty-state" style="grid-column: 1 / -1; padding: 50px 20px;">
           <span class="empty-icon">💡</span>
-          <p style="font-size:1.1rem;font-weight:600;margin-bottom:6px;">Belum ada faidah yang cocok</p>
-          <span style="font-size:0.85rem;color:var(--text-muted);">Mulai catat faidah ilmu baru dengan menekan tombol di atas.</span>
+          <p style="font-size:1.1rem;font-weight:600;margin-bottom:6px;">${emptyMsg}</p>
+          <span style="font-size:0.85rem;color:var(--text-muted);">${emptySub}</span>
         </div>`;
       return;
     }
 
-    container.innerHTML = filtered.map(f => `
-      <div class="faidah-card ${f.isPinned ? 'pinned' : ''}">
-        <div class="faidah-header">
-          <div>
-            <span class="faidah-badge">${escapeHtml(f.kategori)}</span>
-            <div class="faidah-title mt-1">${escapeHtml(f.judul)}</div>
-            ${f.authorName ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">✍️ Oleh: ${escapeHtml(f.authorName)}</div>` : ''}
+    container.innerHTML = filtered.map(f => {
+      const likesCount = f.likesCount || (f.likes ? f.likes.length : 0);
+      const isLiked = myId && Array.isArray(f.likes) && f.likes.includes(myId);
+      const isOwner = session && ((f.userId && f.userId === session.userId) || (f.authorName && f.authorName === session.name));
+      const isAdmin = session && (session.role === 'admin' || session.role === 'ustadz');
+      const authorInitial = (f.authorName || 'S').trim().charAt(0).toUpperCase();
+
+      return `
+        <div class="faidah-card ${f.isPinned ? 'pinned' : ''}">
+          <div class="faidah-header">
+            <div>
+              <span class="faidah-badge">${escapeHtml(f.kategori || 'Faidah')}</span>
+              <div class="faidah-title mt-1">${escapeHtml(f.judul)}</div>
+              <div class="faidah-author-pill">
+                <span class="faidah-author-avatar">${authorInitial}</span>
+                <span><strong>${escapeHtml(f.authorName || 'Santri')}</strong>${f.tanggal ? ` • ${f.tanggal}` : ''}</span>
+              </div>
+            </div>
+            <button onclick="togglePin('${f.id}')" title="${f.isPinned ? 'Lepas Sematan' : 'Sematkan di Atas'}" style="background:none;border:none;font-size:1.25rem;cursor:pointer;line-height:1;">
+              ${f.isPinned ? '⭐' : '☆'}
+            </button>
           </div>
-          <button onclick="togglePin('${f.id}')" title="${f.isPinned ? 'Lepas Favorit' : 'Jadikan Favorit'}" style="background:none;border:none;font-size:1.2rem;cursor:pointer;">
-            ${f.isPinned ? '⭐' : '☆'}
-          </button>
+
+          ${f.arabicText ? `<div class="faidah-arabic">${escapeHtml(f.arabicText)}</div>` : ''}
+
+          <div class="faidah-body">${escapeHtml(f.isi).replace(/\n/g, '<br>')}</div>
+
+          ${f.sumber ? `
+            <div class="faidah-source">
+              <span>📚</span>
+              <span>${escapeHtml(f.sumber)}</span>
+            </div>
+          ` : ''}
+
+          <div class="faidah-footer">
+            <div class="faidah-tags">
+              ${(f.tags || []).map(t => `<span class="faidah-tag">#${escapeHtml(t)}</span>`).join('')}
+            </div>
+
+            <div class="faidah-actions">
+              <!-- Tombol Apresiasi Bermanfaat -->
+              <button onclick="toggleFaidahLike('${f.id}')" class="faidah-like-btn ${isLiked ? 'liked' : ''}" title="${isLiked ? 'Batal apresiasi' : 'Tandai Bermanfaat & Apresiasi'}">
+                <span class="like-icon">🤲</span>
+                <span>${isLiked ? 'Bermanfaat' : 'Bermanfaat'}</span>
+                <span style="background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:10px;font-size:0.72rem;">${likesCount}</span>
+              </button>
+
+              <button onclick="copyFaidah('${f.id}')" class="btn btn-outline btn-sm" title="Salin Teks Faidah">📋</button>
+              ${(isOwner || isAdmin) ? `
+                <button onclick="editFaidah('${f.id}')" class="btn btn-outline btn-sm" title="Edit Faidah Anda">✏️</button>
+                <button onclick="deleteFaidah('${f.id}')" class="btn btn-danger btn-sm" title="Hapus Faidah">🗑️</button>
+              ` : ''}
+            </div>
+          </div>
         </div>
-
-        ${f.arabicText ? `<div class="faidah-arabic">${escapeHtml(f.arabicText)}</div>` : ''}
-
-        <div class="faidah-body">${escapeHtml(f.isi).replace(/\n/g, '<br>')}</div>
-
-        ${f.sumber ? `
-          <div class="faidah-source">
-            <span>📚</span>
-            <span>${escapeHtml(f.sumber)}</span>
-          </div>
-        ` : ''}
-
-        <div class="faidah-footer">
-          <div class="faidah-tags">
-            ${(f.tags || []).map(t => `<span class="faidah-tag">#${escapeHtml(t)}</span>`).join('')}
-          </div>
-          <div class="faidah-actions">
-            <button onclick="copyFaidah('${f.id}')" class="btn btn-outline btn-sm" title="Salin Teks">📋 Salin</button>
-            <button onclick="editFaidah('${f.id}')" class="btn btn-outline btn-sm" title="Edit Faidah">✏️</button>
-            <button onclick="deleteFaidah('${f.id}')" class="btn btn-danger btn-sm" title="Hapus">🗑️</button>
-          </div>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   loadAllFaidah();

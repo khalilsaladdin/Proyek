@@ -39,7 +39,18 @@ const MisykahCloud = {
       const client = initSupabaseClient();
       if (!client) {
         // Fallback lokal
-        return JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
+        const local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
+        return local.map(f => {
+          const rawTags = Array.isArray(f.tags) ? f.tags : [];
+          const likes = rawTags.filter(t => typeof t === 'string' && t.startsWith('like:')).map(t => t.replace('like:', ''));
+          const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:'));
+          return {
+            ...f,
+            tags: cleanTags,
+            likes: likes,
+            likesCount: likes.length
+          };
+        });
       }
       try {
         const { data, error } = await client
@@ -48,32 +59,58 @@ const MisykahCloud = {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return (data || []).map(f => ({
-          id: f.id,
-          userId: f.user_id,
-          authorName: f.author_name,
-          judul: f.judul,
-          kategori: f.kategori,
-          arabicText: f.arabic_text,
-          isi: f.isi,
-          sumber: f.sumber,
-          tags: f.tags || [],
-          isPinned: !!f.is_pinned,
-          tanggal: f.created_at ? f.created_at.split('T')[0] : todayStr()
-        }));
+        return (data || []).map(f => {
+          const rawTags = Array.isArray(f.tags) ? f.tags : [];
+          const likes = rawTags.filter(t => typeof t === 'string' && t.startsWith('like:')).map(t => t.replace('like:', ''));
+          const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:'));
+          return {
+            id: f.id,
+            userId: f.user_id,
+            authorName: f.author_name,
+            judul: f.judul,
+            kategori: f.kategori,
+            arabicText: f.arabic_text,
+            isi: f.isi,
+            sumber: f.sumber,
+            tags: cleanTags,
+            likes: likes,
+            likesCount: likes.length,
+            isPinned: !!f.is_pinned,
+            tanggal: f.created_at ? f.created_at.split('T')[0] : todayStr()
+          };
+        });
       } catch (err) {
         console.warn('[Misykah Cloud] Faidah fetch error, fallback ke lokal:', err);
-        return JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
+        const local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
+        return local.map(f => {
+          const rawTags = Array.isArray(f.tags) ? f.tags : [];
+          const likes = rawTags.filter(t => typeof t === 'string' && t.startsWith('like:')).map(t => t.replace('like:', ''));
+          const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:'));
+          return {
+            ...f,
+            tags: cleanTags,
+            likes: likes,
+            likesCount: likes.length
+          };
+        });
       }
     },
 
     async insert(item) {
       const client = initSupabaseClient();
+      // Siapkan tags kombinasi (clean tags + likes)
+      const cleanTags = Array.isArray(item.tags) ? item.tags.filter(t => !t.startsWith('like:')) : [];
+      const likesList = Array.isArray(item.likes) ? item.likes.map(u => `like:${u}`) : [];
+      const combinedTags = [...cleanTags, ...likesList];
+
       if (!client) {
         const local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
-        local.unshift(item);
+        const idx = local.findIndex(x => x.id === item.id);
+        const savedItem = { ...item, tags: cleanTags, likes: item.likes || [], likesCount: (item.likes || []).length };
+        if (idx !== -1) local[idx] = savedItem;
+        else local.unshift(savedItem);
         localStorage.setItem('misykah_guest_faidah', JSON.stringify(local));
-        return item;
+        return savedItem;
       }
       try {
         const row = {
@@ -85,15 +122,55 @@ const MisykahCloud = {
           arabic_text: item.arabicText || null,
           isi: item.isi,
           sumber: item.sumber || null,
-          tags: item.tags || [],
+          tags: combinedTags,
           is_pinned: !!item.isPinned
         };
-        const { error } = await client.from('faidah').insert([row]);
+        const { error } = await client.from('faidah').upsert([row]);
         if (error) throw error;
         return item;
       } catch(err) {
-        console.error('[Misykah Cloud] Faidah insert error:', err);
+        console.error('[Misykah Cloud] Faidah upsert error:', err);
         throw err;
+      }
+    },
+
+    async toggleLike(id, userId) {
+      if (!userId) return false;
+      const client = initSupabaseClient();
+      const likeKey = `like:${userId}`;
+
+      if (!client) {
+        let local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
+        const f = local.find(x => x.id === id);
+        if (f) {
+          if (!Array.isArray(f.likes)) f.likes = [];
+          const idx = f.likes.indexOf(userId);
+          if (idx !== -1) f.likes.splice(idx, 1);
+          else f.likes.push(userId);
+          f.likesCount = f.likes.length;
+          localStorage.setItem('misykah_guest_faidah', JSON.stringify(local));
+        }
+        return true;
+      }
+
+      try {
+        const { data: current, error: fetchErr } = await client.from('faidah').select('tags').eq('id', id).single();
+        if (fetchErr) throw fetchErr;
+
+        let tags = (current && Array.isArray(current.tags)) ? [...current.tags] : [];
+        const idx = tags.indexOf(likeKey);
+        if (idx !== -1) {
+          tags.splice(idx, 1);
+        } else {
+          tags.push(likeKey);
+        }
+
+        const { error: updateErr } = await client.from('faidah').update({ tags }).eq('id', id);
+        if (updateErr) throw updateErr;
+        return true;
+      } catch(err) {
+        console.error('[Misykah Cloud] Faidah toggleLike error:', err);
+        return false;
       }
     },
 

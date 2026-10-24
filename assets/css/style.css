@@ -1049,7 +1049,92 @@ audio::-webkit-media-controls-panel { background: var(--cream-dark); }
 }
 .faidah-actions {
   display: flex;
+  align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
+}
+
+.faidah-author-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.faidah-author-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(26,92,56,0.15);
+  color: var(--primary);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+}
+
+.faidah-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(26,92,56,0.06);
+  border: 1px solid rgba(26,92,56,0.16);
+  color: var(--primary-dark);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.faidah-like-btn:hover {
+  background: rgba(201,162,39,0.18);
+  border-color: var(--gold);
+  color: var(--gold-dark);
+  transform: scale(1.04);
+}
+.faidah-like-btn.liked {
+  background: #e8f5e9;
+  border-color: #388e3c;
+  color: #1b5e20;
+}
+.faidah-like-btn.liked .like-icon {
+  animation: pulse-like 0.3s ease;
+}
+@keyframes pulse-like {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.faidah-filter-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.faidah-tab-btn {
+  background: var(--white);
+  border: 1px solid var(--cream-dark);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.faidah-tab-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.faidah-tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
 }
 
 /* ── Belajar Bersama / Halaqah ──────────────────────────────── */
