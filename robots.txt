@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://misykah.id/sitemap.xml
+Sitemap: https://misykah.vercel.app/sitemap.xml
