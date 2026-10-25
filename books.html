@@ -165,6 +165,47 @@
       </div>
     </div>
 
+    <!-- 📦 Starter Pack Kitab Penuntut Ilmu (حزمة طالب العلم) -->
+    <div class="starter-pack-container" id="starterPackBox" style="background:linear-gradient(135deg, #072214 0%, #0e3d26 50%, #072214 100%);border:1.5px solid var(--gold);border-radius:var(--border-radius);padding:22px 24px;margin-bottom:28px;box-shadow:0 8px 24px rgba(7,34,20,0.3);position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-25px;right:-15px;font-size:8rem;color:rgba(201,162,39,0.06);pointer-events:none;font-family:'Amiri',serif;user-select:none;">۞</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px;position:relative;z-index:2;">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(201,162,39,0.18);border:1px solid rgba(201,162,39,0.4);color:var(--gold-light);padding:3px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:1px;margin-bottom:8px;">
+            <span>✦</span> KURIKULUM DASAR THALABUL ILMI <span>✦</span>
+          </div>
+          <h2 style="color:#ffffff;font-size:1.35rem;font-weight:700;margin:0 0 6px;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span>📦 Starter Pack Kitab Penuntut Ilmu</span>
+            <span class="font-arabic" style="color:var(--gold);font-weight:normal;font-size:1.45rem;">(حُزْمَةُ طَالِبِ العِلْمِ)</span>
+          </h2>
+          <p style="color:rgba(255,255,255,0.85);font-size:0.85rem;margin:0;line-height:1.5;max-width:760px;">
+            Koleksi matan mukhtashar pokok lintas cabang ilmu syar'i (Aqidah, Hadits, Fiqh, Nahwu, Tajwid, & Adab) karya para ulama terkemuka. Unduh langsung naskah resminya atau tambahkan ke rak buku digital Anda dengan satu klik.
+          </p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-sm" id="btnToggleStarterPack" onclick="toggleStarterPackView()" style="color:var(--gold-light);border:1px solid var(--gold);background:rgba(7,34,20,0.5);font-weight:600;padding:6px 14px;border-radius:20px;">
+            <span id="starterPackToggleIcon">▲</span> <span id="starterPackToggleText">Sembunyikan</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Kategori Cabang Ilmu -->
+      <div id="starterPackContent" style="position:relative;z-index:2;">
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:18px;border-bottom:1px solid rgba(201,162,39,0.2);">
+          <button class="starter-tab active" onclick="filterStarterBooks('all', this)">Semua Cabang (8)</button>
+          <button class="starter-tab" onclick="filterStarterBooks('Aqidah', this)">🛡️ Aqidah & Tauhid (3)</button>
+          <button class="starter-tab" onclick="filterStarterBooks('Hadits', this)">📜 Hadits Nabawi (1)</button>
+          <button class="starter-tab" onclick="filterStarterBooks('Fiqh', this)">⚖️ Fiqh Syafi'i (1)</button>
+          <button class="starter-tab" onclick="filterStarterBooks('Bahasa Arab', this)">📖 Bahasa Arab / Nahwu (1)</button>
+          <button class="starter-tab" onclick="filterStarterBooks('Tajwid', this)">🎙️ Tajwid Al-Qur'an (1)</button>
+          <button class="starter-tab" onclick="filterStarterBooks('Adab', this)">🌿 Adab Penuntut Ilmu (1)</button>
+        </div>
+
+        <!-- Grid 8 Starter Books -->
+        <div id="starterBooksGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
+      </div>
+    </div>
+
     <!-- Toolbar -->
     <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
       <h3 style="color:var(--primary-dark);font-size:1rem;">📖 Koleksi Buku (<span id="bookCount">0</span>)</h3>
@@ -177,11 +218,14 @@
       </div>
       <select class="form-control" id="filterKat" onchange="renderList()" style="width:auto;min-width:150px;">
         <option value="">Semua Kategori</option>
+        <option value="Aqidah">Aqidah & Tauhid</option>
         <option value="Tafsir">Tafsir</option>
         <option value="Hadits">Hadits</option>
         <option value="Fiqh">Fiqh</option>
         <option value="Sirah">Sirah</option>
         <option value="Bahasa Arab">Bahasa Arab</option>
+        <option value="Tajwid">Tajwid Al-Qur'an</option>
+        <option value="Adab">Adab Penuntut Ilmu</option>
         <option value="Lainnya">Lainnya</option>
       </select>
     </div>
@@ -210,11 +254,14 @@
         <div class="form-group">
           <label class="form-label">Kategori</label>
           <select id="inpKategori" class="form-control">
+            <option value="Aqidah">Aqidah & Tauhid</option>
             <option value="Tafsir">Tafsir</option>
             <option value="Hadits">Hadits</option>
             <option value="Fiqh">Fiqh</option>
             <option value="Sirah">Sirah</option>
             <option value="Bahasa Arab">Bahasa Arab</option>
+            <option value="Tajwid">Tajwid Al-Qur'an</option>
+            <option value="Adab">Adab Penuntut Ilmu</option>
             <option value="Lainnya">Lainnya</option>
           </select>
         </div>
@@ -616,6 +663,64 @@
   </div>
 </div>
 
+<!-- Modal Pembaca Naskah Matan Kitab & Kajian Ilmiah -->
+<div class="modal-overlay" id="modalBacaMatan">
+  <div class="modal" style="max-width:820px;width:95%;padding:0;overflow:hidden;border-radius:var(--border-radius);background:var(--body-bg);">
+    <div class="modal-header" style="padding:16px 22px;background:linear-gradient(135deg, #072214, #0e3d26);border-bottom:2px solid var(--gold);color:#fff;">
+      <div style="min-width:0;flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="badge" id="matanModalCategory" style="background:var(--gold);color:#072214;font-weight:700;">Aqidah</span>
+          <span style="font-size:0.75rem;color:rgba(255,255,255,0.75);" id="matanModalAuthor">Syaikh Muhammad bin Abdul Wahhab</span>
+        </div>
+        <div class="modal-title font-arabic" id="matanModalTitleAr" style="color:var(--gold-light);font-size:1.6rem;line-height:1.2;">ثلاثة الأصول</div>
+        <div style="font-size:0.88rem;color:#ffffff;font-weight:600;margin-top:2px;" id="matanModalTitleLat">Tsalatsatul Ushul wa Adillatuha</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalBacaMatan')" style="color:#fff;font-size:1.5rem;">✕</button>
+    </div>
+
+    <!-- Tab Bar: Naskah Arab vs Terjemahan -->
+    <div style="display:flex;gap:10px;padding:12px 22px;background:var(--cream);border-bottom:1px solid rgba(0,0,0,0.06);align-items:center;justify-content:space-between;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm btn-primary" id="tabMatanArabic" onclick="switchMatanTab('arabic')" style="font-size:0.8rem;">
+          📜 Teks Arab Berharakat
+        </button>
+        <button class="btn btn-sm btn-outline" id="tabMatanTranslation" onclick="switchMatanTab('translation')" style="font-size:0.8rem;">
+          🌐 Terjemahan & Faedah
+        </button>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="salinTeksMatan()" title="Salin Naskah Ini" style="font-size:0.8rem;">
+          📋 Salin
+        </button>
+        <a id="btnMatanDownloadPdf" href="#" target="_blank" class="btn btn-outline btn-sm" style="font-size:0.8rem;text-decoration:none;">
+          ⬇️ Unduh PDF Resmi
+        </a>
+      </div>
+    </div>
+
+    <div class="modal-body" style="padding:22px;max-height:65vh;overflow-y:auto;">
+      <!-- Content Arab -->
+      <div id="matanContentArabic" style="direction:rtl;text-align:right;font-family:'Amiri',serif;font-size:1.35rem;line-height:2.2;color:var(--text-dark);">
+      </div>
+
+      <!-- Content Terjemahan -->
+      <div id="matanContentTranslation" style="display:none;line-height:1.8;font-size:0.92rem;color:var(--text-dark);">
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:14px 22px;background:var(--cream-dark);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div id="matanShelfStatus" style="font-size:0.82rem;color:var(--text-muted);"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('modalBacaMatan')">Tutup</button>
+        <button class="btn btn-primary btn-sm" id="btnMatanAddToShelf" onclick="addCurrentStarterToShelf()" style="background:#1a5c38;">
+          ✨ Masukkan ke Rak Saya
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/supabase-config.js"></script>
 <script src="assets/js/supabase-client.js"></script>
@@ -630,14 +735,304 @@
   function getData() { return getUserData('books', session.userId); }
   function saveData(d) { saveUserData('books', session.userId, d); }
 
+
+  // ── STARTER PACK KITAB PENUNTUT ILMU (حزمة طالب العلم) ─────
+  const STARTER_BOOKS = [
+  {
+    "id": "starter_tsalatsatul_ushul",
+    "titleAr": "ثَلَاثَةُ الأُصُولِ وَأَدِلَّتُهَا",
+    "titleLat": "Tsalatsatul Ushul wa Adillatuha",
+    "author": "Syaikh Muhammad bin Abdul Wahhab",
+    "category": "Aqidah",
+    "level": "Tingkat Dasar (Mubtadi')",
+    "desc": "Tiga landasan pokok mengenal Allah Ta'ala, mengenal agama Islam dengan dalil-dalilnya, dan mengenal Nabi Muhammad ﷺ. Pondasi wajib thalabul ilmi.",
+    "pdfUrl": "https://ia800305.us.archive.org/16/items/thalathat-al-usul/thalathat-al-usul.pdf",
+    "textAr": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\nاعْلَمْ رَحِمَكَ اللَّهُ أَنَّهُ يَجِبُ عَلَيْنَا تَعَلُّمُ أَرْبَعِ مَسَائِلَ:\nالأُولَى: العِلْمُ، وَهُوَ مَعْرِفَةُ اللَّهِ، وَمَعْرِفَةُ نَبِيِّهِ، وَمَعْرِفَةُ دِينِ الإِسْلَامِ بِالأَدِلَّةِ.\nالثَّانِيَةُ: العَمَلُ بِهِ.\nالثَّالِثَةُ: الدَّعْوَةُ إِلَيْهِ.\nالرَّابِعَةُ: الصَّبْرُ عَلَى الأَذَى فِيهِ.\n\nوَالدَّلِيلُ قَوْلُهُ تَعَالَى: {وَالْعَصْرِ (1) إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ (2) إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ (3)}.\n\nقَالَ الشَّافِعِيُّ رَحِمَهُ اللَّهُ تَعَالَى: \"لَوْ مَا أَنْزَلَ اللَّهُ حُجَّةً عَلَى خَلْقِهِ إِلَّا هَذِهِ السُّورَةَ لَكَفَتْهُمْ\".",
+    "textId": "Dengan menyebut nama Allah Yang Maha Pengasih lagi Maha Penyayang.\n\nKetahuilah, semoga Allah merahmatimu, sesungguhnya wajib atas kita mempelajari empat perkara pokok:\n1. Ilmu: yaitu mengenal Allah, mengenal Nabi-Nya, dan mengenal agama Islam dengan dalil-dalilnya.\n2. Mengamalkannya.\n3. Mendakwahkannya.\n4. Bersabar atas gangguan di dalamnya.\n\nDalilnya adalah firman Allah Ta'ala (Q.S. Al-'Ashr 1-3): \"Demi masa. Sesungguhnya manusia benar-benar berada dalam kerugian, kecuali orang-orang yang beriman dan mengerjakan kebajikan serta saling menasihati untuk kebenaran dan saling menasihati untuk kesabaran.\""
+  },
+  {
+    "id": "starter_qawaid_arba",
+    "titleAr": "القَوَاعِدُ الأَرْبَعُ",
+    "titleLat": "Al-Qawa'idul Arba'",
+    "author": "Syaikh Muhammad bin Abdul Wahhab",
+    "category": "Aqidah",
+    "level": "Tingkat Dasar (Mubtadi')",
+    "desc": "Empat kaidah krusial dalam memahami hakikat tauhid sejati dan membongkar syubhat kaum musyrikin terdahulu.",
+    "pdfUrl": "https://ia800301.us.archive.org/27/items/qawaid-arba/qawaid-arba.pdf",
+    "textAr": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\nأَسْأَلُ اللَّهَ الْكَرِيمَ رَبَّ الْعَرْشِ الْعَظِيمِ أَنْ يَتَوَلَّاكَ فِي الدُّنْيَا وَالْآخِرَةِ، وَأَنْ يَجْعَلَكَ مُبَارَكًا أَيْنَمَا كُنْتَ، وَأَنْ يَجْعَلَكَ مِمَّنْ إِذَا أُعْطِيَ شَكَرَ، وَإِذَا ابْتُلِيَ صَبَرَ، وَإِذَا أَذْنَبَ اسْتَغْفَرَ؛ فَإِنَّ هَؤُلَاءِ الثَّلَاثَ عُنْوَانُ السَّعَادَةِ.\n\nاعْلَمْ أَنَّ الحَنِيفِيَّةَ مِلَّةَ إِبْرَاهِيمَ: أَنْ تَعْبُدَ اللَّهَ مُخْلِصًا لَهُ الدِّينَ، كَمَا قَالَ تَعَالَى: {وَمَا خَلَقْتُ الْجِنَّ وَالْإِنْسَ إِلَّا لِيَعْبُدُونِ}.",
+    "textId": "Dengan menyebut nama Allah Yang Maha Pengasih lagi Maha Penyayang.\n\nAku memohon kepada Allah Yang Maha Mulia, Rabb Pemilik 'Arsy yang agung, agar melindungimu di dunia dan akhirat, menjadikanmu diberkahi di mana pun engkau berada, dan menjadikanmu termasuk orang yang: jika diberi bersyukur, jika diuji bersabar, dan jika berbuat dosa beristighfar. Sesungguhnya ketiga hal ini adalah kunci kebahagiaan.\n\nKetahuilah bahwa Al-Hanifiyyah (ajaran yang lurus) agama Nabi Ibrahim adalah: engkau menyembah Allah semata dengan memurnikan ketaatan kepada-Nya."
+  },
+  {
+    "id": "starter_arbain_nawawi",
+    "titleAr": "الأَرْبَعُونَ النَّوَوِيَّةُ",
+    "titleLat": "Al-Arba'in An-Nawawiyyah",
+    "author": "Al-Imam Yahya bin Syaraf An-Nawawi",
+    "category": "Hadits",
+    "level": "Tingkat Dasar (Mubtadi')",
+    "desc": "42 hadits shahih pilihan yang merangkum poros peradaban syariat Islam, dari keikhlasan niat hingga ketinggian akhlaq.",
+    "pdfUrl": "https://ia800201.us.archive.org/24/items/ArbainNawawi_201605/Arbain_Nawawi.pdf",
+    "textAr": "عَنْ أَمِيرِ المُؤْمِنِينَ أَبِي حَفْصٍ عُمَرَ بْنِ الخَطَّابِ رَضِيَ اللَّهُ عَنْهُ قَالَ: سَمِعْتُ رَسُولَ اللَّهِ ﷺ يَقُولُ:\n\n\"إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى، فَمَنْ كَانَتْ هِجْرَتُهُ إِلَى اللَّهِ وَرَسُولِهِ فَهِجْرَتُهُ إِلَى اللَّهِ وَرَسُولِهِ، وَمَنْ كَانَتْ هِجْرَتُهُ لِدُنْيَا يُصِيبُهَا أَوْ امْرَأَةٍ يَنْكِحُهَا فَهِجْرَتُهُ إِلَى مَا هَاجَرَ إِلَيْهِ\".\n\n(رَوَاهُ البُخَارِيُّ وَمُسْلِمٌ)",
+    "textId": "Dari Amirul Mukminin Abu Hafsh Umar bin Al-Khaththab radhiyallahu 'anhu, ia berkata: Aku mendengar Rasulullah ﷺ bersabda:\n\n\"Sesungguhnya setiap amal perbuatan tergantung pada niatnya, dan sesungguhnya setiap orang hanya akan mendapatkan apa yang ia niatkan. Maka barangsiapa yang hijrahnya karena Allah dan Rasul-Nya, maka hijrahnya kepada Allah dan Rasul-Nya. Dan barangsiapa yang hijrahnya karena dunia yang ingin diraihnya atau karena wanita yang ingin dinikahinya, maka hijrahnya adalah kepada apa yang ia tuju dalam hijrahnya.\"\n\n(H.R. Bukhari dan Muslim)"
+  },
+  {
+    "id": "starter_matan_ajurrumiyyah",
+    "titleAr": "مَتْنُ الآجُرُّومِيَّةِ فِي النَّحْوِ",
+    "titleLat": "Matan Al-Ajurrumiyyah",
+    "author": "Ibnu Ajurrum Ash-Shinhaji",
+    "category": "Bahasa Arab",
+    "level": "Tingkat Dasar (Mubtadi')",
+    "desc": "Gerbang utama tata bahasa Arab (Nahwu) untuk memahami naskah kitab gundul. Disusun ringkas dan sistematis.",
+    "pdfUrl": "https://ia801309.us.archive.org/1/items/MatnAlAjrumiyyah/Matn_al_Ajrumiyyah.pdf",
+    "textAr": "بَابُ الكَلَامِ:\n\nالكَلَامُ هُوَ: اللَّفْظُ المُرَكَّبُ، المُفِيدُ بِالوَضْعِ.\n\nوَأَقْسَامُهُ ثَلَاثَةٌ: اسْمٌ، وَفِعْلٌ، وَحَرْفٌ جَاءَ لِمَعْنًى.\n\nفَالِاسْمُ يُعْرَفُ: بِالخَفْضِ، وَالتَّنْوِينِ، وَدُخُولِ الأَلِفِ وَاللَّامِ، وَحُرُوفِ الخَفْضِ وَهِيَ: مِنْ، وَإِلَى، وَعَنْ، وَعَلَى، وَفِي، وَرُبَّ، وَالبَاءُ، وَالكَافُ، وَاللَّامُ، وَحُرُوفِ القَسَمِ وَهِيَ: الوَاوُ، وَالبَاءُ، وَالتَّاءُ.\n\nوَالفِعْلُ يُعْرَفُ بِقَدْ، وَالسِّينِ، وَسَوْفَ، وَتَاءِ التَّأْنِيثِ السَّاكِنَةِ.\n\nوَالحَرْفُ مَا لَا يَصْلُحُ مَعَهُ دَلِيلُ الِاسْمِ وَلَا دَلِيلُ الفِعْلِ.",
+    "textId": "BAB KALAM:\n\nKalam adalah: Lafadz yang tersusun (murakkab), yang memberi faedah pemahaman lengkap (mufid), dengan disengaja berbahasa Arab (bil-wadh').\n\nPembagian kata ada tiga: Isim (kata benda), Fi'il (kata kerja), dan Huruf yang memiliki arti makna.\n\nIsim dapat dikenali dengan: tanda Khafadh/Jarr (kasrah), adanya Tanwin, masuknya Alif-Lam (Al), dan huruf-huruf Khafadh (min, ila, 'an, 'ala, fi, rubba, ba, kaf, lam) serta huruf-huruf sumpah (wawu, ba, ta).\n\nFi'il dapat dikenali dengan masuknya: Qad, Sin, Saufa, dan Ta Ta'nits As-Sakinah (ta sukun penanda muannats).\n\nSedangkan Huruf adalah kata yang tidak pantas menerima tanda-tanda isim maupun tanda-tanda fi'il."
+  },
+  {
+    "id": "starter_matan_abu_syuja",
+    "titleAr": "مَتْنُ الغَايَةِ وَالتَّقْرِيبِ (أَبِي شُجَاع)",
+    "titleLat": "Matan Abi Syuja' (Al-Ghayah wat Taqrib)",
+    "author": "Al-Qadhi Abu Syuja' Al-Ashfahani",
+    "category": "Fiqh",
+    "level": "Tingkat Dasar (Mubtadi')",
+    "desc": "Matan fiqh dasar mazhab Syafi'i paling masyhur di dunia pesantren. Membahas thaharah, shalat, zakat, puasa, & ibadah.",
+    "pdfUrl": "https://ia800302.us.archive.org/15/items/MatnAbiShuja/Matn_abi_shuja.pdf",
+    "textAr": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\nقَالَ القَاضِي أَبُو شُجَاعٍ أَحْمَدُ بْنُ الحُسَيْنِ بْنِ أَحْمَدَ الأَصْفَهَانِيُّ رَحِمَهُ اللَّهُ تَعَالَى:\n\nكِتَابُ الطَّهَارَةِ:\nالمِيَاهُ الَّتِي يَجُوزُ بِهَا التَّطْهِيرُ سَبْعُ مِيَاهٍ: مَاءُ السَّمَاءِ، وَمَاءُ البَحْرِ، وَمَاءُ النَّهْرِ، وَمَاءُ البِئْرِ، وَمَاءُ العَيْنِ، وَمَاءُ الثَّلْجِ، وَمَاءُ البَرَدِ.\n\nثُمَّ المِيَاهُ عَلَى أَرْبَعَةِ أَقْسَامٍ: طَاهِرٌ مُطَهِّرٌ غَيْرُ مَكْرُوهٍ وَهُوَ المَاءُ المُطْلَقُ، وَطَاهِرٌ مُطَهِّرٌ مَكْرُوهٌ وَهُوَ المَاءُ المُشَمَّسُ، وَطَاهِرٌ غَيْرُ مُطَهِّرٍ وَهُوَ المَاءُ المُسْتَعْمَلُ وَالمُتَغَيِّرُ بِمَا خَالَطَهُ مِنَ الطَّاهِرَاتِ، وَمَاءٌ نَجِسٌ وَهُوَ الَّذِي حَلَّتْ فِيهِ نَجَاسَةٌ وَهُوَ دُونَ القُلَّتَيْنِ أَوْ كَانَ قُلَّتَيْنِ فَتَغَيَّرَ.",
+    "textId": "Dengan menyebut nama Allah Yang Maha Pengasih lagi Maha Penyayang.\n\nBerkata Al-Qadhi Abu Syuja' Ahmad bin Al-Husain Al-Ashfahani rahimahullah Ta'ala:\n\nKITAB THAHARAH (BERSUCI):\nAir yang boleh digunakan untuk bersuci ada 7 macam air: air langit (hujan), air laut, air sungai, air sumur, air mata air, air salju, dan air embun/es batu.\n\nKemudian air terbagi menjadi 4 bagian: 1) Suci lagi mensucikan tanpa makruh yaitu air mutlak; 2) Suci lagi mensucikan namun makruh yaitu air musyammas (terpapar panas terik matahari dalam wadah logam); 3) Suci namun tidak mensucikan yaitu air musta'mal dan air yang berubah sifatnya karena tercampur benda suci; 4) Air najis yaitu air kurang dari dua qullah yang kejatuhan najis, atau air dua qullah yang berubah rasa/warna/baunya karena najis."
+  },
+  {
+    "id": "starter_tuhfatul_athfal",
+    "titleAr": "تُحْفَةُ الأَطْفَالِ وَالغِلْمَانِ",
+    "titleLat": "Tuhfatul Athfal fi Tajwidil Qur'an",
+    "author": "Syaikh Sulaiman bin Husain Al-Jamzuri",
+    "category": "Tajwid",
+    "level": "Tingkat Dasar (Mubtadi')",
+    "desc": "Syair nadzom tajwid merdu seputar hukum nun sukun, tanwin, mim sukun, idgham, dan mad. Mudah dihafal santri.",
+    "pdfUrl": "https://ia800305.us.archive.org/20/items/TuhfatulAthfal/Tuhfatul_Athfal.pdf",
+    "textAr": "يَقُولُ رَاجِي رَحْمَةِ الْغَفُورِ * دَوْمًا سُلَيْمَانُ هُوَ الْجَمْزُورِي\n\nالْحَمْدُ لِلَّهِ مُصَلِّيًا عَلَى * مُحَمَّدٍ وَآلِهِ وَمَنْ تَلَا\n\nوَبَعْدُ: هَذَا النَّظْمُ لِلْمُرِيدِ * فِي النُّونِ وَالتَّنْوِينِ وَالْمُدُودِ\n\nسَمَّيْتُهُ بِتُحْفَةِ الأَطْفَالِ * عَنْ شَيْخِنَا الْمِيهِيِّ ذِي الْكَمَالِ\n\n(أَحْكَامُ النُّونِ السَّاكِنَةِ وَالتَّنْوِينِ):\nلِلنُّونِ إِنْ تَسْكُنْ وَلِلتَّنْوِينِ * أَرْبَعُ أَحْكَامٍ فَخُذْ تَبْيِينِي\nفَالأَوَّلُ الإِظْهَارُ قَبْلَ أَحْرُفِ * لِلْحَلْقِ سِتٌّ رُتِّبَتْ فَلْتَعْرِفِ:\nهَمْزٌ فَهَاءٌ ثُمَّ عَيْنٌ حَاءُ * مُهْمَلَتَانِ ثُمَّ غَيْنٌ خَاءُ",
+    "textId": "Berkata seorang yang selalu mengharap rahmat dari Yang Maha Pengampun, yaitu Sulaiman Al-Jamzuri:\n\nSegala puji bagi Allah serta shalawat atas Nabi Muhammad, keluarganya, dan orang yang mengikuti jejaknya.\n\nAmma ba'du: Syair ini diperuntukkan bagi siapa saja yang ingin mendalami hukum Nun, Tanwin, serta Mad-Mad.\n\nAku namai bait ini dengan 'Tuhfatul Athfal' (Bingkisan Anak-Anak) dari guru kami Al-Mihiy yang memiliki keutamaan sempurna.\n\nHUKUM NUN SUKUN DAN TANWIN:\nBagi nun sukun dan tanwin ada empat hukum, maka perhatikan penjelasanku:\n1. Idzhar (jelas): ketika bertemu 6 huruf tenggorokan (halq) yang tersusun rapi: Hamzah, Ha', lalu 'Ain, Ha', kemudian Ghain dan Kha'."
+  },
+  {
+    "id": "starter_talim_mutaallim",
+    "titleAr": "تَعْلِيمُ المُتَعَلِّمِ طَرِيقَ التَّعَلُّمِ",
+    "titleLat": "Ta'limul Muta'allim Thariqat Ta'allum",
+    "author": "Al-Imam Burhanuddin Az-Zarnuji",
+    "category": "Adab",
+    "level": "Tingkat Dasar (Mubtadi')",
+    "desc": "Pedoman adab penuntut ilmu, pembersihan niat thalabul ilmi, memuliakan guru dan kitab, serta rahasia keberkahan ilmu.",
+    "pdfUrl": "https://ia800208.us.archive.org/21/items/talim-mutaallim/talim-mutaallim.pdf",
+    "textAr": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\nالحَمْدُ لِلَّهِ الَّذِي فَضَّلَ بَنِي آدَمَ بِالعِلْمِ وَالعَمَلِ عَلَى جَمِيعِ العَالَمِ، وَالصَّلَاةُ وَالسَّلَامُ عَلَى مُحَمَّدٍ سَيِّدِ العَرَبِ وَالعَجَمِ.\n\nفَصْلٌ فِي مَاهِيَّةِ العِلْمِ وَالفِقْهِ وَفَضْلِهِ:\nقَالَ رَسُولُ اللَّهِ ﷺ: \"طَلَبُ العِلْمِ فَرِيضَةٌ عَلَى كُلِّ مُسْلِمٍ وَمُسْلِمَةٍ\".\n\nوَاعْلَمْ بِأَنَّهُ لَا يُفْتَرَضُ عَلَى كُلِّ مُسْلِمٍ طَلَبُ كُلِّ عِلْمٍ، بَلْ يُفْتَرَضُ عَلَيْهِ طَلَبُ عِلْمِ الحَالِ، كَمَا قِيلَ: \"أَفْضَلُ العِلْمِ عِلْمُ الحَالِ، وَأَفْضَلُ العَمَلِ حِفْظُ الحَالِ\". فَيُفْتَرَضُ عَلَى المُسْلِمِ مَا يَقَعُ لَهُ فِي حَالِهِ فِي أَيِّ حَالٍ كَانَ، مِثْلَ الصَّلَاةِ وَالصَّوْمِ.",
+    "textId": "Dengan menyebut nama Allah Yang Maha Pengasih lagi Maha Penyayang.\n\nSegala puji bagi Allah yang melebihkan anak cucu Adam dengan ilmu dan amal di atas seluruh semesta alam, serta shalawat dan salam atas junjungan kita Nabi Muhammad ﷺ penghulu bangsa Arab dan selain Arab.\n\nFASAL MENGENAI HAKIKAT ILMU, FIQH, DAN KEUTAMAANNYA:\nRasulullah ﷺ bersabda: \"Menuntut ilmu itu wajib bagi setiap muslim dan muslimah.\"\n\nKetahuilah bahwa tidak diwajibkan bagi setiap muslim mempelajari seluruh cabang ilmu secara serentak, melainkan yang diwajibkan adalah menuntut 'Ilmul Hal' (ilmu tentang kewajiban yang sedang dihadapi). Sebagaimana pepatah ulama: \"Sebaik-baik ilmu adalah ilmul hal, dan sebaik-baik amal adalah menjaga hal tersebut.\" Wajib bagi seorang muslim mempelajari apa yang ia butuhkan dalam ibadah sehari-harinya, seperti tata cara shalat, bersuci, dan puasa."
+  },
+  {
+    "id": "starter_aqidah_wasithiyyah",
+    "titleAr": "العَقِيدَةُ الوَاسِطِيَّةُ",
+    "titleLat": "Al-Aqidah Al-Wasithiyyah",
+    "author": "Syaikhul Islam Ibnu Taimiyyah",
+    "category": "Aqidah",
+    "level": "Tingkat Menengah (Mutawassith)",
+    "desc": "Rangkuman aqidah salafus shalih tentang Asma' wa Shifat tanpa tahrif, ta'thil, takyif, maupun tamtsil.",
+    "pdfUrl": "https://ia800204.us.archive.org/25/items/waasityah/waasityah.pdf",
+    "textAr": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\nالحَمْدُ لِلَّهِ الَّذِي أَرْسَلَ رَسُولَهُ بِالهُدَى وَدِينِ الحَقِّ لِيُظْهِرَهُ عَلَى الدِّينِ كُلِّهِ وَكَفَى بِاللَّهِ شَهِيدًا.\n\nأَمَّا بَعْدُ: فَهَذَا اعْتِقَادُ الفِرْقَةِ النَّاجِيَةِ المَنْصُورَةِ إِلَى قِيَامِ السَّاعَةِ، أَهْلِ السُّنَّةِ وَالجَمَاعَةِ، وَهُوَ: الإِيمَانُ بِاللَّهِ، وَمَلَائِكَتِهِ، وَكُتُبِهِ، وَرُسُلِهِ، وَالبَعْثِ بَعْدَ المَوْتِ، وَالإِيمَانِ بِالقَدَرِ خَيْرِهِ وَشَرِّهِ.\n\nوَمِنَ الإِيمَانِ بِاللَّهِ: الإِيمَانُ بِمَا وَصَفَ بِهِ نَفْسَهُ فِي كِتَابِهِ الكَرِيمِ، وَبِمَا وَصَفَهُ بِهِ رَسُولُهُ مُحَمَّدٌ ﷺ، مِنْ غَيْرِ تَحْرِيفٍ وَلَا تَعْطِيلٍ، وَمِنْ غَيْرِ تَكْيِيفٍ وَلَا تَمْثِيلٍ.",
+    "textId": "Dengan menyebut nama Allah Yang Maha Pengasih lagi Maha Penyayang.\n\nSegala puji bagi Allah yang telah mengutus Rasul-Nya dengan membawa petunjuk dan agama yang haq untuk dimenangkan-Nya atas segala agama, dan cukuplah Allah sebagai saksi.\n\nAmma ba'du: Ini adalah keyakinan Al-Firqatun Najiyah (Golongan yang Selamat) yang senantiasa ditolong hingga hari kiamat, yaitu Ahlus Sunnah wal Jama'ah:\nBeriman kepada Allah, malaikat-malaikat-Nya, kitab-kitab-Nya, rasul-rasul-Nya, hari kebangkitan setelah kematian, dan beriman kepada takdir yang baik maupun yang buruk.\n\nDan termasuk pokok keimanan kepada Allah adalah: Beriman kepada apa yang Allah sifatkan untuk diri-Nya dalam Kitab-Nya yang mulia, dan apa yang disifatkan oleh Rasul-Nya ﷺ tanpa tahrif (mengubah makna), tanpa ta'thil (menolak sifat), tanpa takyif (menanyakan bagaimana hakikatnya), dan tanpa tamtsil (menyerupakan dengan makhluk)."
+  }
+];
+
+  let currentStarterBook = null;
+  let starterFilter = 'all';
+
+  function renderStarterBooks(cat = 'all') {
+    starterFilter = cat;
+    const grid = document.getElementById('starterBooksGrid');
+    if (!grid) return;
+
+    const userBooks = getData();
+    const filtered = cat === 'all' ? STARTER_BOOKS : STARTER_BOOKS.filter(b => b.category === cat);
+
+    grid.innerHTML = filtered.map(b => {
+      const isAlreadyInShelf = userBooks.some(ub => ub.id === b.id || ub.judul.toLowerCase() === b.titleLat.toLowerCase());
+      const catColor = catColors[b.category] ? catColors[b.category][0] : '#0e3d26';
+
+      return `
+        <div class="starter-card">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span class="starter-badge" style="background:${catColor};color:#fff;border:1px solid rgba(255,255,255,0.2);">
+                ${b.category}
+              </span>
+              <span style="font-size:0.7rem;color:var(--gold-light);background:rgba(201,162,39,0.12);padding:2px 8px;border-radius:10px;">
+                ${b.level}
+              </span>
+            </div>
+
+            <div class="starter-title-ar">${b.titleAr}</div>
+            <div class="starter-title-lat">${b.titleLat}</div>
+            <div class="starter-author">✍️ ${b.author}</div>
+            <div class="starter-desc">${b.desc}</div>
+          </div>
+
+          <div>
+            <div style="display:flex;gap:6px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);">
+              <button class="btn btn-primary btn-sm" onclick="openStarterMatan('${b.id}')" style="flex:1;background:linear-gradient(135deg, #d4af37, #997508);border:none;color:#072214;font-weight:700;font-size:0.78rem;padding:7px 10px;">
+                📖 Baca Matan
+              </button>
+
+              ${isAlreadyInShelf ? `
+                <button class="btn btn-outline btn-sm" disabled style="font-size:0.75rem;padding:7px 10px;color:var(--gold-light);border-color:rgba(201,162,39,0.3);background:rgba(0,0,0,0.2);">
+                  ✅ Di Rak
+                </button>
+              ` : `
+                <button class="btn btn-outline btn-sm" onclick="addStarterBookToShelf('${b.id}')" title="Tambahkan ke Rak Buku Saya" style="font-size:0.75rem;padding:7px 10px;color:#fff;border-color:var(--gold);">
+                  ✨ +Rak
+                </button>
+              `}
+
+              <a href="${b.pdfUrl}" target="_blank" class="btn btn-outline btn-sm" title="Unduh PDF Resmi Naskah Kitab" style="font-size:0.75rem;padding:7px 10px;color:#fff;border-color:rgba(255,255,255,0.25);">
+                ⬇️ PDF
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function filterStarterBooks(cat, btn) {
+    document.querySelectorAll('.starter-tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderStarterBooks(cat);
+  }
+
+  function toggleStarterPackView() {
+    const box = document.getElementById('starterPackContent');
+    const icon = document.getElementById('starterPackToggleIcon');
+    const text = document.getElementById('starterPackToggleText');
+    if (!box) return;
+
+    if (box.style.display === 'none') {
+      box.style.display = 'block';
+      icon.textContent = '▲';
+      text.textContent = 'Sembunyikan';
+    } else {
+      box.style.display = 'none';
+      icon.textContent = '▼';
+      text.textContent = 'Tampilkan Paket';
+    }
+  }
+
+  function addStarterBookToShelf(bookId) {
+    const b = STARTER_BOOKS.find(x => x.id === bookId);
+    if (!b) return;
+
+    const data = getData();
+    if (data.some(x => x.id === b.id || x.judul.toLowerCase() === b.titleLat.toLowerCase())) {
+      showToast('Kitab ini sudah berada di rak buku Anda! 📖', 'info');
+      return;
+    }
+
+    const newItem = {
+      id: b.id,
+      judul: b.titleLat,
+      penulis: b.author,
+      kategori: b.category,
+      deskripsi: b.desc,
+      tanggal: todayStr(),
+      fileName: `${b.titleLat}.pdf`,
+      fileSize: 450000,
+      pdfUrl: b.pdfUrl,
+      isStarterKit: true,
+      storage: 'starter_pack'
+    };
+
+    data.unshift(newItem);
+    saveData(data);
+    renderList();
+    renderStarterBooks(starterFilter);
+    showToast(`Kitab "${b.titleLat}" berhasil ditambahkan ke rak Anda! ✨`, 'success');
+  }
+
+  function addCurrentStarterToShelf() {
+    if (currentStarterBook) {
+      addStarterBookToShelf(currentStarterBook.id);
+      updateMatanShelfStatus();
+    }
+  }
+
+  function updateMatanShelfStatus() {
+    if (!currentStarterBook) return;
+    const userBooks = getData();
+    const inShelf = userBooks.some(ub => ub.id === currentStarterBook.id || ub.judul.toLowerCase() === currentStarterBook.titleLat.toLowerCase());
+    const statusEl = document.getElementById('matanShelfStatus');
+    const btnAdd = document.getElementById('btnMatanAddToShelf');
+    if (inShelf) {
+      statusEl.innerHTML = '<span style="color:#2d7a4f;font-weight:600;">✅ Sudah tersimpan di Rak Buku Anda</span>';
+      btnAdd.disabled = true;
+      btnAdd.innerHTML = '✅ Sudah di Rak';
+      btnAdd.style.background = '#4a5568';
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--text-muted);">Kitab siap ditambahkan ke rak pribadi</span>';
+      btnAdd.disabled = false;
+      btnAdd.innerHTML = '✨ Masukkan ke Rak Saya';
+      btnAdd.style.background = '#1a5c38';
+    }
+  }
+
+  function openStarterMatan(bookId) {
+    const b = STARTER_BOOKS.find(x => x.id === bookId);
+    if (!b) return;
+    currentStarterBook = b;
+
+    document.getElementById('matanModalCategory').textContent = b.category;
+    document.getElementById('matanModalAuthor').textContent = b.author;
+    document.getElementById('matanModalTitleAr').textContent = b.titleAr;
+    document.getElementById('matanModalTitleLat').textContent = b.titleLat;
+
+    document.getElementById('matanContentArabic').innerHTML = b.textAr.replace(/\n/g, '<br>');
+    document.getElementById('matanContentTranslation').innerHTML = b.textId.replace(/\n/g, '<br>');
+    document.getElementById('btnMatanDownloadPdf').href = b.pdfUrl;
+
+    updateMatanShelfStatus();
+    switchMatanTab('arabic');
+    openModal('modalBacaMatan');
+  }
+
+  function switchMatanTab(tab) {
+    const isAr = tab === 'arabic';
+    document.getElementById('matanContentArabic').style.display = isAr ? 'block' : 'none';
+    document.getElementById('matanContentTranslation').style.display = isAr ? 'none' : 'block';
+
+    const tabAr = document.getElementById('tabMatanArabic');
+    const tabTr = document.getElementById('tabMatanTranslation');
+    if (isAr) {
+      tabAr.className = 'btn btn-sm btn-primary';
+      tabTr.className = 'btn btn-sm btn-outline';
+    } else {
+      tabTr.className = 'btn btn-sm btn-primary';
+      tabAr.className = 'btn btn-sm btn-outline';
+    }
+  }
+
+  function salinTeksMatan() {
+    if (!currentStarterBook) return;
+    const textToCopy = `=== ${currentStarterBook.titleLat} (${currentStarterBook.titleAr}) ===\nPenulis: ${currentStarterBook.author}\nKategori: ${currentStarterBook.category}\n\n[Naskah Arab]:\n${currentStarterBook.textAr}\n\n[Terjemahan]:\n${currentStarterBook.textId}\n\n— Dibagikan melalui Misykah Platform Thalabul Ilmi`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        showToast('Naskah matan berhasil disalin ke papan klip! 📋', 'success');
+      });
+    } else {
+      showToast('Gagal menyalin secara otomatis.', 'error');
+    }
+  }
+
   let selectedFileObj = null;
 
   const catColors = {
+    'Aqidah':      ['#072214','#1a5c38'],
     'Tafsir':      ['#1a5c38','#2d7a4f'],
     'Hadits':      ['#7b341e','#a0522d'],
     'Fiqh':        ['#1a3a5c','#2d5a7a'],
     'Sirah':       ['#3d1a5c','#5c2d7a'],
     'Bahasa Arab': ['#5c4a1a','#7a6530'],
+    'Tajwid':      ['#134e4a','#0d9488'],
+    'Adab':        ['#701a75','#a21caf'],
     'Lainnya':     ['#2c3e50','#34495e'],
   };
 
@@ -1444,6 +1839,7 @@
   };
 
 
+  renderStarterBooks('all');
   renderList();
 </script>
 </body>
