@@ -243,6 +243,11 @@
   document.getElementById('miladiDate').textContent = getMiladiDate();
   initSidebar();
 
+  // Sinkronisasi data cloud latar belakang (mutaba'ah & target antar perangkat)
+  if (window.MisykahCloud && MisykahCloud.auth && typeof MisykahCloud.auth.syncPullUserData === 'function') {
+    MisykahCloud.auth.syncPullUserData(session.userId).catch(() => {});
+  }
+
   // Default Faidah Seed if empty
   let userFaidah = getUserData('faidah', session.userId);
   if (!userFaidah || userFaidah.length === 0) {
@@ -361,7 +366,6 @@
   }
 
   // Today's schedule
-  const today = todayStr();
   const todayItems = murojaahData.filter(m => m.jadwal === today);
   const selesaiCount = todayItems.filter(m => m.status === 'selesai').length;
   const scheduleEl = document.getElementById('todaySchedule');

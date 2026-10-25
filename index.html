@@ -414,28 +414,24 @@
     btn.disabled = true;
 
     try {
-      await new Promise(r => setTimeout(r, 200));
-
-      let users = getUsers();
-      if (!users || users.length === 0) {
-        await initDefaultUsers();
-        users = getUsers();
-      }
-
-      const user = users.find(u => u.username.toLowerCase() === username);
-      if (!user) {
-        errEl.innerHTML = '❌ <strong>Username tidak ditemukan.</strong><br>Jika Anda baru pertama kali membuka website ini, silakan klik tab <em>"Daftar Santri Baru"</em> atau gunakan tombol <em>"⚡ Masuk Cepat"</em> di atas.';
-        errEl.style.display = 'block';
-        btn.innerHTML = 'Masuk Portal'; btn.disabled = false;
-        return;
-      }
-
-      const ok = await verifyPassword(password, user.password);
-      if (!ok) {
-        errEl.textContent = '❌ Kata sandi yang Anda masukkan salah. Periksa kembali huruf besar/kecil.';
-        errEl.style.display = 'block';
-        btn.innerHTML = 'Masuk Portal'; btn.disabled = false;
-        return;
+      let user = null;
+      if (window.MisykahCloud && MisykahCloud.auth && typeof MisykahCloud.auth.login === 'function') {
+        user = await MisykahCloud.auth.login(username, password);
+      } else {
+        let users = getUsers();
+        if (!users || users.length === 0) {
+          await initDefaultUsers();
+          users = getUsers();
+        }
+        const localUser = users.find(u => u.username.toLowerCase() === username);
+        if (!localUser) {
+          throw new Error('Username tidak ditemukan di perangkat ini.');
+        }
+        const ok = await verifyPassword(password, localUser.password);
+        if (!ok) {
+          throw new Error('Kata sandi yang Anda masukkan salah. Periksa kembali huruf besar/kecil.');
+        }
+        user = localUser;
       }
 
       setSession(user);
@@ -445,8 +441,8 @@
       }, 500);
 
     } catch (err) {
-      console.error('[Misykah] Login error:', err);
-      errEl.textContent = '❌ Terjadi kendala saat login: ' + (err.message || 'Silakan coba lagi');
+      console.warn('[Misykah] Login error:', err);
+      errEl.innerHTML = `❌ ${err.message || 'Terjadi kendala saat login. Silakan coba lagi.'}`;
       errEl.style.display = 'block';
       btn.innerHTML = 'Masuk Portal'; btn.disabled = false;
     }
@@ -480,37 +476,36 @@
     btn.disabled = true;
 
     try {
-      await new Promise(r => setTimeout(r, 250));
-
-      const users = getUsers();
-      if (users.some(u => u.username.toLowerCase() === username)) {
-        errEl.textContent = '❌ Username sudah digunakan oleh santri lain.';
-        errEl.style.display = 'block';
-        btn.innerHTML = 'Daftar Sekarang'; btn.disabled = false;
-        return;
+      let newUser = null;
+      if (window.MisykahCloud && MisykahCloud.auth && typeof MisykahCloud.auth.register === 'function') {
+        newUser = await MisykahCloud.auth.register(name, username, password);
+      } else {
+        const users = getUsers();
+        if (users.some(u => u.username.toLowerCase() === username)) {
+          throw new Error('Username sudah digunakan oleh santri lain.');
+        }
+        const hashedPassword = await hashPassword(password);
+        newUser = {
+          id: generateId(),
+          name,
+          username,
+          password: hashedPassword,
+          role: username === 'admin' ? 'ustadz' : 'santri',
+          createdAt: todayStr()
+        };
+        users.push(newUser);
+        saveUsers(users);
       }
 
-      const hashedPassword = await hashPassword(password);
-      const newUser = {
-        id: generateId(),
-        name,
-        username,
-        password: hashedPassword,
-        createdAt: todayStr()
-      };
-
-      users.push(newUser);
-      saveUsers(users);
       setSession(newUser);
-
       showToast('Pendaftaran akun berhasil! Mengalihkan ke Dashboard...', 'success');
       setTimeout(() => { 
         window.location.href = 'dashboard.html'; 
       }, 600);
 
     } catch (err) {
-      console.error('[Misykah] Register error:', err);
-      errEl.textContent = '❌ Terjadi kendala saat pendaftaran: ' + (err.message || 'Silakan coba lagi');
+      console.warn('[Misykah] Register error:', err);
+      errEl.textContent = '❌ ' + (err.message || 'Terjadi kendala saat pendaftaran. Silakan coba lagi.');
       errEl.style.display = 'block';
       btn.innerHTML = 'Daftar Sekarang'; btn.disabled = false;
     }

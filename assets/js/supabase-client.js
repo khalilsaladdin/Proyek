@@ -751,6 +751,214 @@ const MisykahCloud = {
     }
   },
 
+  // ── AUTENTIKASI & SINKRONISASI AKUN LINTAS PERANGKAT ───────
+  auth: {
+    _syncTimer: null,
+
+    async getUserByUsername(username) {
+      const client = initSupabaseClient();
+      if (!client) return null;
+      try {
+        const { data, error } = await client
+          .from('santri_accounts')
+          .select('id, name, username, password_hash, role, metadata, created_at')
+          .eq('username', username.toLowerCase())
+          .maybeSingle();
+
+        if (error) {
+          if (error.code !== 'PGRST116') {
+            console.warn('[Misykah Cloud Auth] getUserByUsername info:', error.message);
+          }
+          return null;
+        }
+        if (data) {
+          return {
+            id: data.id,
+            name: data.name,
+            username: data.username,
+            password: data.password_hash,
+            role: data.role || 'santri',
+            metadata: data.metadata || {},
+            createdAt: data.created_at
+          };
+        }
+        return null;
+      } catch (err) {
+        console.warn('[Misykah Cloud Auth] Exception fetching user:', err);
+        return null;
+      }
+    },
+
+    async register(name, username, password) {
+      const uname = username.trim().toLowerCase();
+      if (uname.length < 3) throw new Error('Username minimal 3 karakter.');
+      if (password.length < 6) throw new Error('Password minimal 6 karakter.');
+
+      const client = initSupabaseClient();
+      if (client) {
+        const existing = await this.getUserByUsername(uname);
+        if (existing) {
+          throw new Error('Username sudah digunakan oleh santri lain.');
+        }
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const newUser = {
+        id: generateId(),
+        name: name.trim(),
+        username: uname,
+        password: hashedPassword,
+        role: uname === 'admin' ? 'ustadz' : 'santri',
+        metadata: {},
+        createdAt: todayStr()
+      };
+
+      if (client) {
+        try {
+          const row = {
+            id: newUser.id,
+            name: newUser.name,
+            username: newUser.username,
+            password_hash: newUser.password,
+            role: newUser.role,
+            metadata: {}
+          };
+          const { error } = await client.from('santri_accounts').insert([row]);
+          if (error) {
+            console.warn('[Misykah Cloud Auth] Gagal simpan ke santri_accounts:', error);
+            if (error.code === '23505' || String(error.message).includes('duplicate') || String(error.message).includes('unique')) {
+              throw new Error('Username sudah digunakan oleh santri lain.');
+            }
+          }
+        } catch(cloudErr) {
+          if (cloudErr.message && cloudErr.message.includes('sudah digunakan')) {
+            throw cloudErr;
+          }
+        }
+      }
+
+      // Simpan ke daftar lokal
+      let users = getUsers();
+      if (!users.some(u => u.username.toLowerCase() === uname)) {
+        users.push(newUser);
+        saveUsers(users);
+      }
+
+      return newUser;
+    },
+
+    async login(username, password) {
+      const uname = username.trim().toLowerCase();
+      let users = getUsers();
+      let targetUser = users.find(u => u.username.toLowerCase() === uname);
+
+      // Jika belum ditemukan di browser/perangkat ini, cari ke Supabase Cloud
+      if (!targetUser) {
+        const cloudUser = await this.getUserByUsername(uname);
+        if (cloudUser) {
+          targetUser = cloudUser;
+          users.push(cloudUser);
+          saveUsers(users);
+        }
+      }
+
+      if (!targetUser) {
+        throw new Error('Username tidak ditemukan di perangkat ini maupun di Cloud Misykah.');
+      }
+
+      let isValid = await verifyPassword(password, targetUser.password);
+      if (!isValid) {
+        // Cek cloud jika password baru saja diubah di perangkat lain
+        const freshCloud = await this.getUserByUsername(uname);
+        if (freshCloud && freshCloud.password !== targetUser.password) {
+          const cloudOk = await verifyPassword(password, freshCloud.password);
+          if (cloudOk) {
+            isValid = true;
+            const idx = users.findIndex(u => u.username.toLowerCase() === uname);
+            if (idx !== -1) users[idx] = freshCloud;
+            saveUsers(users);
+            targetUser = freshCloud;
+          }
+        }
+      }
+
+      if (!isValid) {
+        throw new Error('Kata sandi yang Anda masukkan salah. Periksa kembali huruf besar/kecil.');
+      }
+
+      // Jika ada metadata di Cloud, pulihkan ke penyimpanan lokal perangkat ini
+      if (targetUser.metadata && typeof targetUser.metadata === 'object') {
+        this.hydrateLocalStorage(targetUser.id, targetUser.metadata);
+      }
+
+      return targetUser;
+    },
+
+    hydrateLocalStorage(userId, meta) {
+      if (!meta || typeof meta !== 'object') return;
+      const keys = ['targets', 'target', 'records', 'bookmarks', 'murojaah', 'books', 'muhadharah', 'faidah'];
+      keys.forEach(k => {
+        if (meta[k] !== undefined) {
+          try {
+            localStorage.setItem(`misykah_${k}_${userId}`, JSON.stringify(meta[k]));
+          } catch(e) {}
+        }
+      });
+    },
+
+    gatherUserMetadata(userId) {
+      const meta = {};
+      const keys = ['targets', 'target', 'records', 'bookmarks', 'murojaah', 'books', 'muhadharah', 'faidah'];
+      keys.forEach(k => {
+        try {
+          const raw = localStorage.getItem(`misykah_${k}_${userId}`);
+          if (raw) meta[k] = JSON.parse(raw);
+        } catch(e) {}
+      });
+      return meta;
+    },
+
+    async syncUserData(userId) {
+      const client = initSupabaseClient();
+      if (!client || !userId) return;
+      const meta = this.gatherUserMetadata(userId);
+      try {
+        await client
+          .from('santri_accounts')
+          .update({ 
+            metadata: meta, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', userId);
+      } catch(err) {
+        console.warn('[Misykah Cloud Auth] Sync error:', err);
+      }
+    },
+
+    syncUserDataDebounced(userId) {
+      if (this._syncTimer) clearTimeout(this._syncTimer);
+      this._syncTimer = setTimeout(() => {
+        this.syncUserData(userId);
+      }, 2000);
+    },
+
+    async syncPullUserData(userId) {
+      const client = initSupabaseClient();
+      if (!client || !userId) return;
+      try {
+        const { data, error } = await client
+          .from('santri_accounts')
+          .select('metadata')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (data && data.metadata) {
+          this.hydrateLocalStorage(userId, data.metadata);
+        }
+      } catch(e) {}
+    }
+  },
+
   // ── REALTIME SUBSCRIPTION ──────────────────────────────────
   subscribe(table, onChange) {
     const client = initSupabaseClient();

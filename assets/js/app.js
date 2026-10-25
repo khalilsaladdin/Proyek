@@ -127,6 +127,7 @@ function setSession(user) {
     userId: user.id,
     name: user.name,
     username: user.username,
+    role: user.role || (user.username === 'admin' ? 'ustadz' : 'santri'),
     loginAt: Date.now()
   };
   try {
@@ -178,6 +179,9 @@ function saveUserData(key, userId, data) {
     localStorage.setItem(`misykah_${key}_${userId}`, JSON.stringify(data));
   } catch(e) {
     console.warn('[Misykah] saveUserData error:', e);
+  }
+  if (window.MisykahCloud && MisykahCloud.auth && typeof MisykahCloud.auth.syncUserDataDebounced === 'function') {
+    MisykahCloud.auth.syncUserDataDebounced(userId);
   }
 }
 

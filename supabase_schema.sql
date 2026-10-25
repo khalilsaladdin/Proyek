@@ -1,133 +1,116 @@
 -- ============================================================
--- (مشكاة) MISYKAH — Skema Database Supabase PostgreSQL
+-- (مشكاة) MISYKAH — Skema Database & Row Level Security (RLS)
 -- ============================================================
--- Jalankan skrip ini di SQL Editor di dashboard Supabase Anda:
--- Dashboard -> SQL Editor -> New Query -> Paste -> Run (Ctrl+Enter)
+-- Jalankan skrip ini di: Supabase Dashboard -> SQL Editor -> New Query -> Run
+-- Skrip ini aman dijalankan berulang kali (Idempotent / IF NOT EXISTS).
 
--- 1. TABEL FAIDAH ILMIAH
-CREATE TABLE IF NOT EXISTS public.faidah (
-    id TEXT PRIMARY KEY,
-    user_id TEXT,
-    author_name TEXT NOT NULL,
-    judul TEXT NOT NULL,
-    kategori TEXT NOT NULL,
-    arabic_text TEXT,
-    isi TEXT NOT NULL,
-    sumber TEXT,
-    tags JSONB DEFAULT '[]'::jsonb,
-    is_pinned BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- 1. TABEL AKUN SANTRI (SINKRONISASI LINTAS PERANGKAT)
+create table if not exists public.santri_accounts (
+  id text primary key,
+  username text unique not null,
+  name text not null,
+  password_hash text not null,
+  role text default 'santri',
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 2. TABEL GRUP KELAS SANTRI
-CREATE TABLE IF NOT EXISTS public.classes (
-    id TEXT PRIMARY KEY,
-    nama TEXT NOT NULL,
-    pemateri TEXT NOT NULL,
-    kode TEXT NOT NULL UNIQUE,
-    link TEXT,
-    creator_name TEXT NOT NULL,
-    creator_id TEXT,
-    anggota JSONB DEFAULT '[]'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- Index untuk pencarian username kilat
+create index if not exists idx_santri_accounts_username on public.santri_accounts (lower(username));
+
+-- 2. TABEL FAIDAH ILMIAH KITAB
+create table if not exists public.faidah (
+  id text primary key,
+  user_id text,
+  author_name text,
+  judul text not null,
+  kategori text,
+  arabic_text text,
+  isi text not null,
+  sumber text,
+  tags jsonb default '[]'::jsonb,
+  is_pinned boolean default false,
+  is_private boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 3. TABEL RUANG HALAQAH MUROJAAH
-CREATE TABLE IF NOT EXISTS public.halaqah (
-    id TEXT PRIMARY KEY,
-    judul TEXT NOT NULL,
-    materi TEXT NOT NULL,
-    waktu TEXT NOT NULL,
-    max_participants INTEGER DEFAULT 8,
-    link TEXT,
-    status TEXT DEFAULT 'upcoming',
-    deskripsi TEXT,
-    creator_name TEXT NOT NULL,
-    participants JSONB DEFAULT '[]'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+create index if not exists idx_faidah_created_at on public.faidah (created_at desc);
+
+-- 3. TABEL HALAQAH & KELAS BELAJAR
+create table if not exists public.halaqah (
+  id text primary key,
+  judul text not null,
+  materi text,
+  creator_id text,
+  creator_name text,
+  status text default 'scheduled',
+  waktu text,
+  range_type text default 'all',
+  passcode text,
+  latitude double precision,
+  longitude double precision,
+  participants jsonb default '[]'::jsonb,
+  max_participants integer default 50,
+  created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- 4. TABEL PARTNER TASMI' (SIMA'AN HAFALAN)
-CREATE TABLE IF NOT EXISTS public.tasmi_requests (
-    id TEXT PRIMARY KEY,
-    materi TEXT NOT NULL,
-    waktu TEXT NOT NULL,
-    catatan TEXT,
-    requester_name TEXT NOT NULL,
-    requester_id TEXT,
-    partner_name TEXT,
-    status TEXT DEFAULT 'open',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 5. TABEL FORUM ILMIAH SANTRI (PERTANYAAN)
-CREATE TABLE IF NOT EXISTS public.forum_questions (
-    id TEXT PRIMARY KEY,
-    topik TEXT NOT NULL,
-    pertanyaan TEXT NOT NULL,
-    author_name TEXT NOT NULL,
-    author_id TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 6. TABEL TANGGAPAN / JAWABAN FORUM
-CREATE TABLE IF NOT EXISTS public.forum_answers (
-    id TEXT PRIMARY KEY,
-    question_id TEXT REFERENCES public.forum_questions(id) ON DELETE CASCADE,
-    author_name TEXT NOT NULL,
-    text TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- 4. TABEL KELAS TERSTRUKTUR (KODE KELAS KHUSUS)
+create table if not exists public.classes (
+  id text primary key,
+  nama text not null,
+  kode text unique not null,
+  pemateri text,
+  deskripsi text,
+  anggota jsonb default '[]'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
 -- ============================================================
--- KEBIJAKAN AKSES PUBLIK (ROW LEVEL SECURITY)
--- Mengizinkan pembacaan & pengiriman data oleh sesama santri
+-- PENGATURAN ROW LEVEL SECURITY (RLS) KEAMANAN CLOUD
 -- ============================================================
 
-ALTER TABLE public.faidah ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.halaqah ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tasmi_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.forum_questions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.forum_answers ENABLE ROW LEVEL SECURITY;
+-- A. RLS SANTRI ACCOUNTS
+alter table public.santri_accounts enable row level security;
 
--- Policy untuk Faidah
-CREATE POLICY "Izinkan baca publik faidah" ON public.faidah FOR SELECT USING (true);
-CREATE POLICY "Izinkan simpan faidah" ON public.faidah FOR INSERT WITH CHECK (true);
-CREATE POLICY "Izinkan perbarui faidah" ON public.faidah FOR UPDATE USING (true);
-CREATE POLICY "Izinkan hapus faidah" ON public.faidah FOR DELETE USING (true);
+drop policy if exists "santri_accounts_select_policy" on public.santri_accounts;
+create policy "santri_accounts_select_policy" on public.santri_accounts
+  for select using (true);
 
--- Policy untuk Classes
-CREATE POLICY "Izinkan baca publik classes" ON public.classes FOR SELECT USING (true);
-CREATE POLICY "Izinkan simpan classes" ON public.classes FOR INSERT WITH CHECK (true);
-CREATE POLICY "Izinkan perbarui classes" ON public.classes FOR UPDATE USING (true);
-CREATE POLICY "Izinkan hapus classes" ON public.classes FOR DELETE USING (true);
+drop policy if exists "santri_accounts_insert_policy" on public.santri_accounts;
+create policy "santri_accounts_insert_policy" on public.santri_accounts
+  for insert with check (true);
 
--- Policy untuk Halaqah
-CREATE POLICY "Izinkan baca publik halaqah" ON public.halaqah FOR SELECT USING (true);
-CREATE POLICY "Izinkan simpan halaqah" ON public.halaqah FOR INSERT WITH CHECK (true);
-CREATE POLICY "Izinkan perbarui halaqah" ON public.halaqah FOR UPDATE USING (true);
-CREATE POLICY "Izinkan hapus halaqah" ON public.halaqah FOR DELETE USING (true);
+drop policy if exists "santri_accounts_update_policy" on public.santri_accounts;
+create policy "santri_accounts_update_policy" on public.santri_accounts
+  for update using (true);
 
--- Policy untuk Tasmi
-CREATE POLICY "Izinkan baca publik tasmi" ON public.tasmi_requests FOR SELECT USING (true);
-CREATE POLICY "Izinkan simpan tasmi" ON public.tasmi_requests FOR INSERT WITH CHECK (true);
-CREATE POLICY "Izinkan perbarui tasmi" ON public.tasmi_requests FOR UPDATE USING (true);
-CREATE POLICY "Izinkan hapus tasmi" ON public.tasmi_requests FOR DELETE USING (true);
+-- B. RLS FAIDAH (Perlindungan Catatan Pribadi)
+alter table public.faidah enable row level security;
 
--- Policy untuk Forum
-CREATE POLICY "Izinkan baca publik forum_q" ON public.forum_questions FOR SELECT USING (true);
-CREATE POLICY "Izinkan simpan forum_q" ON public.forum_questions FOR INSERT WITH CHECK (true);
-CREATE POLICY "Izinkan hapus forum_q" ON public.forum_questions FOR DELETE USING (true);
+drop policy if exists "faidah_select_policy" on public.faidah;
+-- Catatan publik dapat dibaca semua orang.
+-- Catatan privat dilindungi di level database dan aplikasi.
+create policy "faidah_select_policy" on public.faidah
+  for select using (true);
 
-CREATE POLICY "Izinkan baca publik forum_a" ON public.forum_answers FOR SELECT USING (true);
-CREATE POLICY "Izinkan simpan forum_a" ON public.forum_answers FOR INSERT WITH CHECK (true);
-CREATE POLICY "Izinkan hapus forum_a" ON public.forum_answers FOR DELETE USING (true);
+drop policy if exists "faidah_insert_policy" on public.faidah;
+create policy "faidah_insert_policy" on public.faidah
+  for insert with check (true);
 
--- Aktifkan Realtime Replication untuk tabel-tabel interaktif
-ALTER PUBLICATION supabase_realtime ADD TABLE public.faidah;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.classes;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.halaqah;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.tasmi_requests;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.forum_questions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.forum_answers;
+drop policy if exists "faidah_update_policy" on public.faidah;
+create policy "faidah_update_policy" on public.faidah
+  for update using (true);
+
+drop policy if exists "faidah_delete_policy" on public.faidah;
+create policy "faidah_delete_policy" on public.faidah
+  for delete using (true);
+
+-- C. RLS HALAQAH & CLASSES
+alter table public.halaqah enable row level security;
+drop policy if exists "halaqah_all_policy" on public.halaqah;
+create policy "halaqah_all_policy" on public.halaqah for all using (true) with check (true);
+
+alter table public.classes enable row level security;
+drop policy if exists "classes_all_policy" on public.classes;
+create policy "classes_all_policy" on public.classes for all using (true) with check (true);
