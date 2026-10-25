@@ -24,6 +24,23 @@
       padding: 0;
       overflow: hidden;
       background: #fff;
+      transition: width 0.3s ease, max-width 0.3s ease;
+    }
+    .pdf-modal.dual-pane {
+      width: 96vw;
+      max-width: 1400px;
+    }
+    @media (max-width: 900px) {
+      .pdf-main-area {
+        flex-direction: column !important;
+      }
+      .pdf-ai-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 50% !important;
+        border-left: none !important;
+        border-top: 2px solid #e0d8c3;
+      }
     }
     .pdf-header {
       padding: 12px 18px;
@@ -222,7 +239,7 @@
 
 <!-- Modal Baca PDF Ponsel & Desktop -->
 <div class="modal-overlay" id="modalBaca">
-  <div class="modal pdf-modal">
+  <div class="modal pdf-modal" id="pdfModalBox">
     <div class="pdf-header">
       <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
         <span style="font-size:1.4rem;">📖</span>
@@ -258,15 +275,304 @@
         <button class="btn btn-outline btn-sm" onclick="zoomPdf(0.2)" title="Perbesar Halaman" style="padding:4px 8px;">🔍 +</button>
         <button class="btn btn-outline btn-sm" onclick="fitWidthPdf()" title="Sesuaikan dengan Lebar Layar Ponsel" style="padding:4px 8px;">↔️ Pas Layar</button>
       </div>
+
+      <div class="pdf-controls">
+        <button class="btn btn-primary btn-sm" onclick="toggleDualPaneMode()" id="btnToggleDualPane" title="Aktifkan tampilan berdampingan: Halaman Buku PDF + Transkripsi & Terjemahan AI" style="padding:4px 12px;background:linear-gradient(135deg, #d4af37, #aa820a);border:none;color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(170,130,10,0.3);cursor:pointer;">
+          <span id="dualPaneIcon">✨</span> <span id="dualPaneText">Mode Belajar & Transkrip AI</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Canvas Container -->
-    <div class="pdf-viewer-container" id="pdfViewerContainer">
-      <div id="pdfLoadingSpinner" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;background:rgba(0,0,0,0.7);padding:18px 24px;border-radius:10px;">
-        <div class="loader" style="width:32px;height:32px;border-width:3px;margin:0 auto 8px;border-color:#fff;border-top-color:var(--gold);"></div>
-        <div style="font-size:0.85rem;">Memuat Halaman...</div>
+    <!-- Main Reading Area (Split Pane) -->
+    <div class="pdf-main-area" id="pdfMainArea" style="display:flex;width:100%;height:73vh;overflow:hidden;background:#3e4143;">
+      <!-- Sisi Kiri: PDF Canvas Viewer -->
+      <div class="pdf-viewer-container" id="pdfViewerContainer" style="flex:1;height:100%;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:16px 8px;position:relative;">
+        <div id="pdfLoadingSpinner" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;background:rgba(0,0,0,0.7);padding:18px 24px;border-radius:10px;z-index:10;">
+          <div class="loader" style="width:32px;height:32px;border-width:3px;margin:0 auto 8px;border-color:#fff;border-top-color:var(--gold);"></div>
+          <div style="font-size:0.85rem;">Memuat Halaman...</div>
+        </div>
+        <canvas id="pdfCanvas"></canvas>
       </div>
-      <canvas id="pdfCanvas"></canvas>
+
+      <!-- Sisi Kanan: Panel Transkripsi & Terjemahan AI -->
+      <div class="pdf-ai-panel" id="pdfAiPanel" style="display:none;width:520px;max-width:50%;background:#fcfbf7;border-left:2px solid #e0d8c3;height:100%;flex-direction:column;overflow:hidden;">
+        <!-- Header Panel -->
+        <div style="padding:10px 14px;background:#f5efe1;border-bottom:1px solid #dfd5be;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <div style="display:flex;align-items:center;gap:6px;font-weight:700;font-size:0.92rem;color:var(--primary-dark);">
+            <span>✨</span> <span id="panelPageLabel">Transkripsi Halaman 1</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button class="btn btn-outline btn-sm" onclick="transkripsiHalamanIni(true)" style="padding:3px 8px;font-size:0.75rem;" title="Muat ulang transkripsi halaman ini">🔄 Muat Ulang</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleDualPaneMode(false)" style="padding:3px 8px;font-size:0.75rem;">✕ Tutup</button>
+          </div>
+        </div>
+
+        <!-- Body Panel -->
+        <div id="aiPanelBody" style="flex:1;overflow-y:auto;padding:14px;">
+          <!-- State Loading -->
+          <div id="panelAiLoading" style="display:none;text-align:center;padding:40px 10px;">
+            <div class="loader" style="width:36px;height:36px;margin:0 auto 12px;border-top-color:var(--gold);"></div>
+            <div style="font-weight:600;font-size:0.95rem;color:var(--primary-dark);">Membaca teks naskah Arab...</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">Menganalisis harakat, hadits, dan terjemahan ilmiah.</div>
+          </div>
+
+          <!-- State Empty -->
+          <div id="panelAiEmpty" style="text-align:center;padding:40px 16px;color:#777;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">📖✨</div>
+            <div style="font-weight:600;font-size:0.95rem;color:#333;margin-bottom:6px;">Transkripsi Halaman Ini Belum Dimuat</div>
+            <p style="font-size:0.82rem;line-height:1.5;margin-bottom:14px;">Klik tombol di bawah untuk mentranskripsikan halaman yang sedang aktif ke dalam teks Arab berharakat dan terjemahan bahasa Indonesia.</p>
+            <button class="btn btn-primary btn-sm" onclick="transkripsiHalamanIni(true)" style="background:linear-gradient(135deg,#c29d38,#94741e);border:none;padding:6px 14px;color:#fff;cursor:pointer;">⚡ Transkripsikan Halaman Ini</button>
+          </div>
+
+          <!-- State Error -->
+          <div id="panelAiError" style="display:none;padding:16px;background:#fff5f5;border:1px solid #ffd2d2;border-radius:8px;text-align:center;">
+            <div style="font-size:1.8rem;margin-bottom:6px;">⚠️</div>
+            <div style="font-weight:700;color:#c92a2a;font-size:0.9rem;margin-bottom:4px;">Layanan API Belum Aktif</div>
+            <div style="font-size:0.8rem;color:#555;margin-bottom:10px;" id="panelAiErrorMsg">Pastikan file <code>jalankan-api.bat</code> di folder <code>transkripsi-arab</code> sudah dijalankan.</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" onclick="transkripsiHalamanIni(true)">🔄 Coba Lagi</button>
+              <button class="btn btn-outline btn-sm" onclick="aturAlamatApi()">⚙️ Atur Server API</button>
+            </div>
+          </div>
+
+          <!-- State Content -->
+          <div id="panelAiContent" style="display:none;">
+            <!-- Audio Widget -->
+            <div id="panelAudioContainer" style="background:#f4f9f4;border:1px solid #c8e6c9;border-radius:8px;padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <span style="font-weight:600;font-size:0.82rem;color:#1b5e20;">🔊 Qari AI:</span>
+              <audio id="panelAudioPlayer" controls style="height:28px;max-width:240px;"></audio>
+            </div>
+
+            <!-- Teks Arab -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label style="font-weight:700;font-size:0.85rem;color:var(--primary-dark);">📖 Naskah Arab (Berharakat):</label>
+              <button class="btn btn-outline btn-sm" onclick="salinTeksArab()" style="padding:2px 6px;font-size:0.72rem;">📋 Salin</button>
+            </div>
+            <div id="panelArabicText" dir="rtl" style="font-family:'Amiri','Traditional Arabic',serif;font-size:19px;line-height:2.0;text-align:right;background:#fff;border:1px solid #e5dfd2;border-radius:6px;padding:12px;margin-bottom:14px;max-height:240px;overflow-y:auto;color:#111;"></div>
+
+            <!-- Terjemahan -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label style="font-weight:700;font-size:0.85rem;color:#1b4d75;">🌐 Terjemahan Indonesia:</label>
+              <button class="btn btn-outline btn-sm" onclick="salinTerjemahan()" style="padding:2px 6px;font-size:0.72rem;">📋 Salin</button>
+            </div>
+            <div id="panelTranslationText" style="font-family:'Poppins',sans-serif;font-size:0.84rem;line-height:1.6;background:#f7faff;border:1px solid #d0e2f2;border-radius:6px;padding:12px;margin-bottom:14px;max-height:180px;overflow-y:auto;color:#203a4c;"></div>
+
+            <!-- Footnotes -->
+            <div id="panelFootnotesContainer" style="display:none;background:#fafafa;border:1px dashed #d5d5d5;border-radius:6px;padding:10px;margin-bottom:12px;">
+              <div style="font-weight:600;font-size:0.78rem;color:#666;margin-bottom:4px;">📜 Catatan Kaki:</div>
+              <div id="panelFootnotesText" dir="rtl" style="font-family:'Amiri',serif;font-size:14px;line-height:1.7;color:#555;text-align:right;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Footer -->
+        <div style="padding:8px 14px;background:#f5efe1;border-top:1px solid #dfd5be;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <label style="font-size:0.75rem;color:#555;display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
+            <input type="checkbox" id="chkAutoTranscribe" onchange="onAutoTranscribeChange(this)"> ⚡ Auto-transkrip saat ganti hal.
+          </label>
+          <button class="btn btn-outline btn-sm" onclick="bukaModalBatchTranskripsi(currentBookId)" style="padding:2px 8px;font-size:0.75rem;" title="Ekspor kitab ke Word">📥 Ekspor Word</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Hasil Transkripsi & Terjemahan AI Kitab -->
+<div class="modal-overlay" id="modalTranskripsi" style="z-index: 10000;">
+  <div class="modal" style="max-width: 780px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #1a5c38, #113f26); color: #fff; border-bottom: 2px solid var(--gold);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size: 1.4rem;">✨</span>
+        <div>
+          <div class="modal-title" style="color:#fff;font-size:1.1rem;font-weight:700;">Transkripsi & Terjemahan AI</div>
+          <div style="font-size:0.75rem;color:#e0eedb;" id="transkripsiSubJudul">Halaman ...</div>
+        </div>
+      </div>
+</div>
+
+<!-- Modal Ekspor Kitab ke Word (.docx) -->
+<div class="modal-overlay" id="modalBatchTranskripsi" style="z-index: 10001;">
+  <div class="modal" style="max-width: 540px; width: 92vw;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #1a5c38, #113f26); color: #fff; border-bottom: 2px solid var(--gold);">
+      <div class="modal-title" style="color:#fff;font-size:1.05rem;font-weight:700;">📥 Ekspor Kitab ke Microsoft Word (.docx)</div>
+      <button class="modal-close" onclick="closeModal('modalBatchTranskripsi')" style="color:#fff;">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 18px;">
+      <p style="font-size:0.85rem;color:#555;margin-bottom:14px;line-height:1.5;">
+        Sistem AI akan mentranskripsi halaman kitab yang Anda tentukan dan menyusunnya menjadi file <strong>Microsoft Word (.docx)</strong> berformat rapi lengkap dengan <strong>Daftar Isi Otomatis (*Fihris*)</strong> dan <strong>Pemisah Catatan Kaki</strong>.
+      </p>
+      
+      <div class="form-group" style="margin-bottom:14px;background:#fcfbf7;border:1px solid #eee;border-radius:6px;padding:10px 14px;">
+        <label class="form-label" style="font-weight:600;font-size:0.82rem;color:var(--text-muted);margin-bottom:2px;">Judul Kitab:</label>
+        <div id="batchJudulBuku" style="font-weight:700;color:var(--primary-dark);font-size:0.98rem;">-</div>
+      </div>
+</div>
+
+<!-- Modal Ekspor Kitab ke Word (.docx) -->
+<div class="modal-overlay" id="modalBatchTranskripsi" style="z-index: 10001;">
+  <div class="modal" style="max-width: 540px; width: 92vw;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #1a5c38, #113f26); color: #fff; border-bottom: 2px solid var(--gold);">
+      <div class="modal-title" style="color:#fff;font-size:1.05rem;font-weight:700;">📥 Ekspor Kitab ke Microsoft Word (.docx)</div>
+      <button class="modal-close" onclick="closeModal('modalBatchTranskripsi')" style="color:#fff;">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 18px;">
+      <p style="font-size:0.85rem;color:#555;margin-bottom:14px;line-height:1.5;">
+        Sistem AI akan mentranskripsi halaman kitab yang Anda tentukan dan menyusunnya menjadi file <strong>Microsoft Word (.docx)</strong> berformat rapi lengkap dengan <strong>Daftar Isi Otomatis (*Fihris*)</strong> dan <strong>Pemisah Catatan Kaki</strong>.
+      </p>
+      
+      <div class="form-group" style="margin-bottom:14px;background:#fcfbf7;border:1px solid #eee;border-radius:6px;padding:10px 14px;">
+        <label class="form-label" style="font-weight:600;font-size:0.82rem;color:var(--text-muted);margin-bottom:2px;">Judul Kitab:</label>
+        <div id="batchJudulBuku" style="font-weight:700;color:var(--primary-dark);font-size:0.98rem;">-</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:0.82rem;font-weight:600;">Mulai Halaman:</label>
+          <input type="number" id="batchStartPage" class="form-control" min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:0.82rem;font-weight:600;">Sampai Halaman:</label>
+          <input type="number" id="batchEndPage" class="form-control" min="1" value="5">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="font-size:0.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="batchIncludeTrans" checked>
+          <span>🌐 Sertakan Terjemahan Bahasa Indonesia</span>
+        </label>
+      </div>
+
+      <!-- Progress Status Box -->
+      <div id="batchProgressBox" style="display:none;background:#fcfbf7;border:1px solid #e5dfd2;border-radius:8px;padding:16px;text-align:center;margin-top:12px;">
+        <div class="loader" style="width:36px;height:36px;margin:0 auto 10px;border-top-color:var(--gold);"></div>
+        <div style="font-weight:600;font-size:0.92rem;color:var(--primary-dark);" id="batchProgressText">Sedang mentranskripsikan naskah kitab dengan AI...</div>
+        <div style="font-size:0.78rem;color:#777;margin-top:4px;">Mohon tunggu, AI sedang menyusun teks Arab, terjemahan, dan format Word.</div>
+      </div>
+
+      <div id="batchErrorBox" style="display:none;padding:12px;background:#fff5f5;border:1px solid #ffd2d2;border-radius:8px;color:#c92a2a;font-size:0.82rem;margin-top:10px;" id="batchErrorMsg">
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalBatchTranskripsi')">Batal</button>
+      <button class="btn btn-primary btn-sm" id="btnMulaiBatch" onclick="jalankanBatchTranskripsi()" style="background:#1a5c38;">▶ Mulai Ekspor Word</button>
+    </div>
+  </div>
+</div>
+      <button class="modal-close" onclick="closeModal('modalTranskripsi')" style="color:#fff;font-size:1.4rem;">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding: 16px; overflow-y: auto; flex: 1;">
+      <!-- State 1: Loading -->
+      <div id="aiLoadingBox" style="text-align: center; padding: 40px 20px;">
+        <div class="loader" style="width:40px;height:40px;margin:0 auto 16px;border-top-color:var(--gold);"></div>
+        <div style="font-weight:600;font-size:1.05rem;color:var(--primary-dark);" id="aiLoadingStatus">Sedang membaca teks Arab dengan AI filologi...</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);margin-top:6px;">Menganalisis harakat, hadits, ayat Al-Qur'an & menyusun terjemahan ilmiah.</div>
+      </div>
+
+      <!-- State 2: Error Connection -->
+      <div id="aiErrorBox" style="display:none;padding:24px;text-align:center;background:#fff8f8;border:1px solid #ffd2d2;border-radius:10px;">
+        <div style="font-size:2rem;margin-bottom:8px;">⚠️</div>
+        <div style="font-weight:700;color:#c92a2a;font-size:1rem;margin-bottom:6px;">Layanan API Transkripsi Belum Aktif</div>
+        <div style="font-size:0.85rem;color:#555;line-height:1.6;margin-bottom:16px;" id="aiErrorMessage">
+          Pastikan server backend Python telah dijalankan dengan klik ganda file <code>jalankan-api.bat</code> di folder <code>transkripsi-arab</code>.
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="transkripsiHalamanIni()">🔄 Coba Lagi</button>
+      </div>
+
+      <!-- State 3: Result Content -->
+      <div id="aiResultBox" style="display:none;">
+        <!-- Audio Player Widget -->
+        <div id="aiAudioContainer" style="background:#f4f9f4;border:1px solid #c8e6c9;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.2rem;">🔊</span>
+            <span style="font-weight:600;font-size:0.88rem;color:#1b5e20;">Pelafalan Fasih Bahasa Arab (Qari AI)</span>
+          </div>
+          <audio id="aiAudioPlayer" controls style="height:32px;max-width:280px;"></audio>
+        </div>
+
+        <!-- Teks Arab -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <label style="font-weight:700;font-size:0.92rem;color:var(--primary-dark);">📖 Naskah Arab (Baku & Berharakat):</label>
+          <button class="btn btn-outline btn-sm" onclick="salinTeksArab()" style="padding:2px 8px;font-size:0.75rem;">📋 Salin Teks Arab</button>
+        </div>
+        <div id="aiArabicText" dir="rtl" style="font-family:'Amiri','Traditional Arabic',serif;font-size:21px;line-height:2.1;text-align:right;background:#fcfbf7;border:1px solid #e8e2d2;border-radius:8px;padding:16px;margin-bottom:16px;max-height:260px;overflow-y:auto;color:#1a1a1a;">
+        </div>
+
+        <!-- Terjemahan Indonesia -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <label style="font-weight:700;font-size:0.92rem;color:#1b4d75;">🌐 Terjemahan Bahasa Indonesia:</label>
+          <button class="btn btn-outline btn-sm" onclick="salinTerjemahan()" style="padding:2px 8px;font-size:0.75rem;">📋 Salin Terjemahan</button>
+        </div>
+        <div id="aiTranslationText" style="font-family:'Poppins',sans-serif;font-size:0.88rem;line-height:1.7;background:#f7faff;border:1px solid #d0e2f2;border-radius:8px;padding:14px;margin-bottom:16px;max-height:200px;overflow-y:auto;color:#203a4c;">
+        </div>
+
+        <!-- Catatan Kaki / Footnotes (jika ada) -->
+        <div id="aiFootnotesSection" style="display:none;background:#fafafa;border:1px dashed #d5d5d5;border-radius:8px;padding:12px;margin-bottom:16px;">
+          <div style="font-weight:600;font-size:0.8rem;color:#666;margin-bottom:6px;">📜 Catatan Kaki & Takhrij:</div>
+          <div id="aiFootnotesText" dir="rtl" style="font-family:'Amiri',serif;font-size:15px;line-height:1.8;color:#555;text-align:right;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span style="font-size:0.75rem;color:var(--text-muted);">Didukung AI Filologi Google Gemini 3.5 Flash</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('modalTranskripsi')">Tutup</button>
+        <button class="btn btn-primary btn-sm" id="btnSalinSemua" onclick="salinSemua()" style="background:#1a5c38;">📋 Salin Semua</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ekspor Kitab ke Word (.docx) -->
+<div class="modal-overlay" id="modalBatchTranskripsi" style="z-index: 10001;">
+  <div class="modal" style="max-width: 540px; width: 92vw;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #1a5c38, #113f26); color: #fff; border-bottom: 2px solid var(--gold);">
+      <div class="modal-title" style="color:#fff;font-size:1.05rem;font-weight:700;">📥 Ekspor Kitab ke Microsoft Word (.docx)</div>
+      <button class="modal-close" onclick="closeModal('modalBatchTranskripsi')" style="color:#fff;">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 18px;">
+      <p style="font-size:0.85rem;color:#555;margin-bottom:14px;line-height:1.5;">
+        Sistem AI akan mentranskripsi halaman kitab yang Anda tentukan dan menyusunnya menjadi file <strong>Microsoft Word (.docx)</strong> berformat rapi lengkap dengan <strong>Daftar Isi Otomatis (*Fihris*)</strong> dan <strong>Pemisah Catatan Kaki</strong>.
+      </p>
+      
+      <div class="form-group" style="margin-bottom:14px;background:#fcfbf7;border:1px solid #eee;border-radius:6px;padding:10px 14px;">
+        <label class="form-label" style="font-weight:600;font-size:0.82rem;color:var(--text-muted);margin-bottom:2px;">Judul Kitab:</label>
+        <div id="batchJudulBuku" style="font-weight:700;color:var(--primary-dark);font-size:0.98rem;">-</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:0.82rem;font-weight:600;">Mulai Halaman:</label>
+          <input type="number" id="batchStartPage" class="form-control" min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:0.82rem;font-weight:600;">Sampai Halaman:</label>
+          <input type="number" id="batchEndPage" class="form-control" min="1" value="5">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="font-size:0.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="batchIncludeTrans" checked>
+          <span>🌐 Sertakan Terjemahan Bahasa Indonesia</span>
+        </label>
+      </div>
+
+      <!-- Progress Status Box -->
+      <div id="batchProgressBox" style="display:none;background:#fcfbf7;border:1px solid #e5dfd2;border-radius:8px;padding:16px;text-align:center;margin-top:12px;">
+        <div class="loader" style="width:36px;height:36px;margin:0 auto 10px;border-top-color:var(--gold);"></div>
+        <div style="font-weight:600;font-size:0.92rem;color:var(--primary-dark);" id="batchProgressText">Sedang mentranskripsikan naskah kitab dengan AI...</div>
+        <div style="font-size:0.78rem;color:#777;margin-top:4px;">Mohon tunggu, AI sedang menyusun teks Arab, terjemahan, dan format Word.</div>
+      </div>
+
+      <div id="batchErrorBox" style="display:none;padding:12px;background:#fff5f5;border:1px solid #ffd2d2;border-radius:8px;color:#c92a2a;font-size:0.82rem;margin-top:10px;" id="batchErrorMsg">
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalBatchTranskripsi')">Batal</button>
+      <button class="btn btn-primary btn-sm" id="btnMulaiBatch" onclick="jalankanBatchTranskripsi()" style="background:#1a5c38;">▶ Mulai Ekspor Word</button>
     </div>
   </div>
 </div>
@@ -602,14 +908,446 @@
           <div class="book-author">✍️ ${escapeHtml(b.penulis)}</div>
           ${b.deskripsi ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;line-height:1.4;">${escapeHtml(b.deskripsi.length>80?b.deskripsi.slice(0,80)+'...':b.deskripsi)}</div>` : ''}
           <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:10px;">📅 ${formatDate(b.tanggal)} ${sizeStr ? `• 💾 ${sizeStr}` : ''}</div>
-          <div class="book-actions">
-            <button class="btn btn-primary btn-sm" onclick="bacaBuku('${b.id}')">📖 Baca</button>
-            <button class="btn btn-danger btn-sm" onclick="hapus('${b.id}')">🗑</button>
+                    <div class="book-actions" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-outline btn-sm" onclick="bacaBuku('${b.id}', false)">📖 Baca</button>
+            <button class="btn btn-primary btn-sm" onclick="bacaBuku('${b.id}', true)" style="background:linear-gradient(135deg,#c29d38,#94741e);border:none;color:#fff;font-weight:600;" title="Buka buku langsung dengan Transkripsi & Terjemahan AI">✨ Baca & Transkrip AI</button>
+            <button class="btn btn-outline btn-sm" onclick="bukaModalBatchTranskripsi('${b.id}')" title="Ekspor kitab ke file Word (.docx)">📥 Ekspor Word</button>
+            <button class="btn btn-danger btn-sm" onclick="hapus('${b.id}')" title="Hapus Buku">🗑</button>
           </div>
         </div>
       </div>`;
     }).join('');
   }
+
+  // =========================================================
+  // INTEGRASI SISTEM TRANSKRIPSI & TERJEMAHAN AI KITAB
+  // =========================================================
+  
+  function aturAlamatApi() {
+    const current = localStorage.getItem('misykah_transcription_api') || 'http://127.0.0.1:8000';
+    const newUrl = prompt('Masukkan URL server API Transkripsi (contoh: http://127.0.0.1:8000 atau https://api.anda.com):', current);
+    if (newUrl !== null && newUrl.trim()) {
+      localStorage.setItem('misykah_transcription_api', newUrl.trim().replace(/\/+$/, ''));
+      showToast('Alamat server API berhasil disimpan!', 'success');
+      setTimeout(() => window.location.reload(), 500);
+    }
+  }
+
+  const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const TRANSCRIPTION_API = localStorage.getItem('misykah_transcription_api') || (isLocalHost ? 'http://127.0.0.1:8000' : '');
+  let currentBookId = null;
+  let currentBookData = null;
+  let isDualPane = false;
+  let autoTranscribe = false;
+  const pageAiCache = {}; // Cache per nomor halaman agar tidak query ulang jika kembali ke halaman sebelumnya
+  let lastArabicText = '';
+  let lastTranslationText = '';
+
+  function toggleDualPaneMode(forceState) {
+    if (typeof forceState === 'boolean') {
+      isDualPane = forceState;
+    } else {
+      isDualPane = !isDualPane;
+    }
+
+    const modalBox = document.getElementById('pdfModalBox');
+    const aiPanel = document.getElementById('pdfAiPanel');
+    const btnToggle = document.getElementById('btnToggleDualPane');
+    const textSpan = document.getElementById('dualPaneText');
+    const iconSpan = document.getElementById('dualPaneIcon');
+
+    if (isDualPane) {
+      if (modalBox) modalBox.classList.add('dual-pane');
+      if (aiPanel) aiPanel.style.display = 'flex';
+      if (btnToggle) {
+        btnToggle.style.background = 'linear-gradient(135deg, #1a5c38, #113f26)';
+        textSpan.textContent = 'Tutup Panel AI';
+        iconSpan.textContent = '◀';
+      }
+      fitWidthPdf();
+      // Periksa apakah halaman saat ini sudah ada di cache
+      if (pageAiCache[pageNum]) {
+        renderPanelContent(pageAiCache[pageNum]);
+      } else if (autoTranscribe) {
+        transkripsiHalamanIni(true);
+      } else {
+        showPanelEmpty();
+      }
+    } else {
+      if (modalBox) modalBox.classList.remove('dual-pane');
+      if (aiPanel) aiPanel.style.display = 'none';
+      if (btnToggle) {
+        btnToggle.style.background = 'linear-gradient(135deg, #d4af37, #aa820a)';
+        textSpan.textContent = 'Mode Belajar & Transkrip AI';
+        iconSpan.textContent = '✨';
+      }
+      fitWidthPdf();
+    }
+  }
+
+  function onAutoTranscribeChange(el) {
+    autoTranscribe = el.checked;
+    if (autoTranscribe && isDualPane && !pageAiCache[pageNum]) {
+      transkripsiHalamanIni(true);
+    }
+  }
+
+  function showPanelEmpty() {
+    document.getElementById('panelPageLabel').textContent = `Transkripsi Halaman ${pageNum}`;
+    document.getElementById('panelAiLoading').style.display = 'none';
+    document.getElementById('panelAiError').style.display = 'none';
+    document.getElementById('panelAiContent').style.display = 'none';
+    document.getElementById('panelAiEmpty').style.display = 'block';
+  }
+
+  function renderPanelContent(data) {
+    document.getElementById('panelPageLabel').textContent = `Transkripsi Halaman ${pageNum}`;
+    lastArabicText = data.arabic_text || '';
+    lastTranslationText = data.translation || '';
+
+    // Render Teks Arab
+    document.getElementById('panelArabicText').innerHTML = (data.arabic_text || 'Tidak ada teks Arab terdeteksi.').split('\n').join('<br>');
+
+    // Render Terjemahan
+    document.getElementById('panelTranslationText').innerHTML = (data.translation || 'Tidak ada terjemahan.').split('\n').join('<br>');
+
+    // Render Catatan Kaki
+    const fnBox = document.getElementById('panelFootnotesContainer');
+    if (data.footnotes && data.footnotes.length > 0) {
+      fnBox.style.display = 'block';
+      document.getElementById('panelFootnotesText').innerHTML = data.footnotes.join('<br>');
+    } else {
+      fnBox.style.display = 'none';
+    }
+
+    // Audio Player
+    const audPlayer = document.getElementById('panelAudioPlayer');
+    if (lastArabicText) {
+      audPlayer.src = `${TRANSCRIPTION_API}/api/tts?text=${encodeURIComponent(lastArabicText.slice(0, 500))}`;
+      document.getElementById('panelAudioContainer').style.display = 'flex';
+    } else {
+      document.getElementById('panelAudioContainer').style.display = 'none';
+    }
+
+    document.getElementById('panelAiEmpty').style.display = 'none';
+    document.getElementById('panelAiLoading').style.display = 'none';
+    document.getElementById('panelAiError').style.display = 'none';
+    document.getElementById('panelAiContent').style.display = 'block';
+  }
+
+  async function transkripsiHalamanIni(isPanel = true) {
+    const canvas = document.getElementById('pdfCanvas');
+    if (!canvas) {
+      showToast('Tidak ada halaman PDF yang sedang aktif.', 'error');
+      return;
+    }
+
+    if (pageAiCache[pageNum]) {
+      if (isPanel) renderPanelContent(pageAiCache[pageNum]);
+      return;
+    }
+
+    if (isPanel) {
+      if (!isDualPane) toggleDualPaneMode(true);
+      document.getElementById('panelAiEmpty').style.display = 'none';
+      document.getElementById('panelAiError').style.display = 'none';
+      document.getElementById('panelAiContent').style.display = 'none';
+      document.getElementById('panelAiLoading').style.display = 'block';
+    } else {
+      openModal('modalTranskripsi');
+      document.getElementById('transkripsiSubJudul').textContent = `Menganalisis Halaman ${pageNum}...`;
+      document.getElementById('aiLoadingBox').style.display = 'block';
+      document.getElementById('aiErrorBox').style.display = 'none';
+      document.getElementById('aiResultBox').style.display = 'none';
+    }
+
+    try {
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+      if (!blob) throw new Error('Gagal mengambil tangkapan layar halaman.');
+
+      const formData = new FormData();
+      formData.append('file', blob, `halaman_${pageNum}.jpg`);
+      formData.append('include_translation', 'true');
+      formData.append('strip_tashkeel', 'false');
+
+      const response = await fetch(`${TRANSCRIPTION_API}/api/transcribe-canvas`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.detail || `Server merespon dengan status ${response.status}`);
+      }
+
+      const res = await response.json();
+      if (!res.success || !res.data) throw new Error('Respon API tidak valid.');
+
+      const data = res.data;
+      pageAiCache[pageNum] = data; // Simpan ke cache
+
+      if (isPanel) {
+        renderPanelContent(data);
+      } else {
+        lastArabicText = data.arabic_text || '';
+        lastTranslationText = data.translation || '';
+        document.getElementById('aiArabicText').innerHTML = (data.arabic_text || '').split('\n').join('<br>');
+        document.getElementById('aiTranslationText').innerHTML = (data.translation || '').split('\n').join('<br>');
+        const fnBox = document.getElementById('aiFootnotesSection');
+        if (data.footnotes && data.footnotes.length > 0) {
+          fnBox.style.display = 'block';
+          document.getElementById('aiFootnotesText').innerHTML = data.footnotes.join('<br>');
+        } else {
+          fnBox.style.display = 'none';
+        }
+        const audioPlayer = document.getElementById('aiAudioPlayer');
+        if (lastArabicText) {
+          audioPlayer.src = `${TRANSCRIPTION_API}/api/tts?text=${encodeURIComponent(lastArabicText.slice(0, 500))}`;
+          document.getElementById('aiAudioContainer').style.display = 'flex';
+        }
+        document.getElementById('aiLoadingBox').style.display = 'none';
+        document.getElementById('aiResultBox').style.display = 'block';
+        document.getElementById('transkripsiSubJudul').textContent = `Halaman ${pageNum} · Selesai Ditranskripsi`;
+      }
+
+      showToast(`Halaman ${pageNum} berhasil ditranskripsikan!`, 'success');
+    } catch (err) {
+      console.error('Error saat transkripsi:', err);
+      if (isPanel) {
+        document.getElementById('panelAiLoading').style.display = 'none';
+        document.getElementById('panelAiError').style.display = 'block';
+        document.getElementById('panelAiErrorMsg').textContent = err.message;
+      } else {
+        document.getElementById('aiLoadingBox').style.display = 'none';
+        document.getElementById('aiErrorBox').style.display = 'block';
+        document.getElementById('aiErrorMessage').textContent = err.message;
+      }
+    }
+  }
+
+  
+  function downloadWordDirect(title, pages) {
+    let docContent = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>";
+    docContent += "<head><meta charset='utf-8'><title>" + title + "</title>";
+    docContent += "<style>";
+    docContent += "body { font-family: 'Traditional Arabic', 'Amiri', serif; }";
+    docContent += ".ar { direction: rtl; text-align: right; font-size: 18pt; line-height: 2.0; color: #111; }";
+    docContent += ".tr { direction: ltr; text-align: left; font-family: Calibri, sans-serif; font-size: 11pt; color: #222; margin-top: 8px; margin-bottom: 16px; }";
+    docContent += ".page-title { font-size: 14pt; font-weight: bold; color: #0e3d26; text-align: center; border-bottom: 2px solid #c9a227; padding-bottom: 4px; margin-top: 24px; }";
+    docContent += "</style></head><body>";
+    docContent += "<h1 style='text-align:center;color:#0e3d26;font-size:22pt;'>" + title + "</h1>";
+    docContent += "<p style='text-align:center;color:#666;font-size:10pt;'>Ditranskripsi melalui (مشكاة) Misykah</p><hr/>";
+
+    pages.forEach(p => {
+      docContent += "<div class='page-title'>--- Halaman " + (p.page || '') + " ---</div>";
+      if (p.arabic_text) docContent += "<div class='ar'>" + p.arabic_text.replace(/\n/g, '<br>') + "</div>";
+      if (p.translation) docContent += "<div class='tr'><strong>[ Terjemahan Indonesia ]</strong><br>" + p.translation.replace(/\n/g, '<br>') + "</div>";
+      if (p.footnotes && p.footnotes.length) {
+        docContent += "<div style='font-size:10pt;color:#666;direction:rtl;text-align:right;'><strong>Catatan Kaki:</strong><br>" + p.footnotes.join('<br>') + "</div>";
+      }
+    });
+    docContent += "</body></html>";
+
+    const blob = new Blob(['\ufeff' + docContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "Transkripsi_" + title + ".doc";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadTxtDirect(title, pages) {
+    let txt = "====================================================\n";
+    txt += "(مشكاة) TRANSKRIPSI KITAB: " + title + "\n";
+    txt += "====================================================\n\n";
+    pages.forEach(p => {
+      txt += "\n[ --- Halaman " + (p.page || '') + " --- ]\n\n";
+      if (p.arabic_text) txt += p.arabic_text + "\n\n";
+      if (p.translation) txt += "[ Terjemahan Indonesia ]\n" + p.translation + "\n\n";
+      if (p.footnotes && p.footnotes.length) txt += "[ Catatan Kaki ]\n" + p.footnotes.join('\n') + "\n\n";
+    });
+
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "Transkripsi_" + title + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function unduhHalamanIniTxt() {
+    if (!lastArabicText && !lastTranslationText) {
+      showToast('Belum ada teks transkripsi pada halaman ini.', 'warning');
+      return;
+    }
+    const pages = [{
+      page: pageNum,
+      arabic_text: lastArabicText,
+      translation: lastTranslationText
+    }];
+    const bookTitle = currentBookData ? currentBookData.judul : 'Kitab';
+    downloadTxtDirect(bookTitle + '_Hal_' + pageNum, pages);
+    showToast('File .txt berhasil diunduh! 📄', 'success');
+  }
+
+  function unduhHalamanIniDoc() {
+    if (!lastArabicText && !lastTranslationText) {
+      showToast('Belum ada teks transkripsi pada halaman ini.', 'warning');
+      return;
+    }
+    const pages = [{
+      page: pageNum,
+      arabic_text: lastArabicText,
+      translation: lastTranslationText
+    }];
+    const bookTitle = currentBookData ? currentBookData.judul : 'Kitab';
+    downloadWordDirect(bookTitle + '_Hal_' + pageNum, pages);
+    showToast('File Word berhasil diunduh! 📘', 'success');
+  }
+
+  function salinTeksArab() {
+    if (!lastArabicText) return;
+    navigator.clipboard.writeText(lastArabicText);
+    showToast('Teks Arab berhasil disalin!', 'success');
+  }
+
+  function salinTerjemahan() {
+    if (!lastTranslationText) return;
+    navigator.clipboard.writeText(lastTranslationText);
+    showToast('Terjemahan berhasil disalin!', 'success');
+  }
+
+  function salinSemua() {
+    if (!lastArabicText && !lastTranslationText) return;
+    navigator.clipboard.writeText(`--- Naskah Arab ---\n${lastArabicText}
+
+--- Terjemahan ---\n${lastTranslationText}`);
+    showToast('Naskah dan terjemahan berhasil disalin!', 'success');
+  }
+
+  // --- Fitur Ekspor Batch Seluruh Kitab ke Word (.docx) ---
+  async function bukaModalBatchTranskripsi(id) {
+    const item = getData().find(b => b.id === id);
+    if (!item) return;
+    currentBookId = id;
+    currentBookData = item;
+
+    document.getElementById('batchJudulBuku').textContent = item.judul;
+    document.getElementById('batchStartPage').value = 1;
+    document.getElementById('batchEndPage').value = 5;
+    document.getElementById('batchProgressBox').style.display = 'none';
+    document.getElementById('batchErrorBox').style.display = 'none';
+    document.getElementById('btnMulaiBatch').disabled = false;
+    document.getElementById('btnMulaiBatch').textContent = '▶ Mulai Ekspor Word';
+    openModal('modalBatchTranskripsi');
+  }
+
+  async function jalankanBatchTranskripsi() {
+    if (!currentBookId) return;
+    const startP = parseInt(document.getElementById('batchStartPage').value) || 1;
+    const endP = parseInt(document.getElementById('batchEndPage').value) || 5;
+    const includeTrans = document.getElementById('batchIncludeTrans').checked;
+
+    if (startP > endP) {
+      showToast('Halaman awal tidak boleh lebih besar dari halaman akhir.', 'warning');
+      return;
+    }
+
+    const btn = document.getElementById('btnMulaiBatch');
+    const pBox = document.getElementById('batchProgressBox');
+    const errBox = document.getElementById('batchErrorBox');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Sedang Memproses...';
+    pBox.style.display = 'block';
+    errBox.style.display = 'none';
+
+    try {
+      const blob = await MisykahDB.getFile(currentBookId);
+      if (!blob) throw new Error('File PDF tidak ditemukan di database lokal browser.');
+
+      const formData = new FormData();
+      formData.append('file', blob, `${currentBookData ? currentBookData.judul : 'kitab'}.pdf`);
+      formData.append('start_page', startP);
+      formData.append('end_page', endP);
+      formData.append('include_translation', includeTrans ? 'true' : 'false');
+      formData.append('strip_tashkeel', 'false');
+
+      const response = await fetch(`${TRANSCRIPTION_API}/api/transcribe-book`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.detail || `Server merespon error: ${response.status}`);
+      }
+
+      const res = await response.json();
+      if (!res.success || !res.docx_download_url) throw new Error('Gagal menghasilkan file Word.');
+
+      showToast(`Transkripsi ${res.total_processed} halaman selesai! Memulai unduhan Word...`, 'success');
+
+      // Mulai otomatis download file Word .docx
+      const downloadLink = document.createElement('a');
+      downloadLink.href = `${TRANSCRIPTION_API}${res.docx_download_url}`;
+      downloadLink.download = `Transkripsi_${currentBookData ? currentBookData.judul : 'Kitab'}.docx`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      closeModal('modalBatchTranskripsi');
+    } catch(err) {
+      console.error(err);
+      pBox.style.display = 'none';
+      errBox.style.display = 'block';
+      errBox.textContent = `Gagal: ${err.message}. Pastikan server backend API (jalankan-api.bat) sedang aktif.`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '▶ Mulai Ekspor Word';
+    }
+  }
+
+  // --- Perbarui fungsi bacaBuku agar menerima parameter withAi ---
+  const originalBacaBuku = bacaBuku;
+  bacaBuku = async function(id, withAi = false) {
+    currentBookId = id;
+    currentBookData = getData().find(b => b.id === id);
+    for (let k in pageAiCache) delete pageAiCache[k]; // Reset cache buku sebelumnya
+
+    await originalBacaBuku(id);
+
+    if (withAi) {
+      setTimeout(() => {
+        toggleDualPaneMode(true);
+      }, 400);
+    } else {
+      toggleDualPaneMode(false);
+    }
+  };
+
+  // --- Hook ke pergantian halaman PDF agar AI panel otomatis memperbarui tampilan ---
+  const originalRenderPdfPage = renderPdfPage;
+  renderPdfPage = async function(num) {
+    await originalRenderPdfPage(num);
+    if (isDualPane) {
+      document.getElementById('panelPageLabel').textContent = `Transkripsi Halaman ${num}`;
+      if (pageAiCache[num]) {
+        renderPanelContent(pageAiCache[num]);
+      } else if (autoTranscribe) {
+        transkripsiHalamanIni(true);
+      } else {
+        showPanelEmpty();
+      }
+    }
+  };
+
 
   renderList();
 </script>
