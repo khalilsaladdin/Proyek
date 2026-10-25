@@ -31,7 +31,55 @@ app.add_middleware(
 )
 
 DEFAULT_GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODELS = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-3.5-flash"]
+
+# ── Dynamic Model Discovery & Self-Healing ─────────────────────
+ACTIVE_MODELS_CACHE = []
+CACHE_TIMESTAMP = 0.0
+
+def get_available_gemini_models(api_key: str = "", force_refresh: bool = False) -> list:
+    """Mendeteksi secara dinamis model Gemini Vision terbaru yang aktif di akun Google user.
+    Mencegah error 404 jika Google di kemudian hari memensiunkan/mengganti versi model."""
+    global ACTIVE_MODELS_CACHE, CACHE_TIMESTAMP
+    now = time.time()
+    if not force_refresh and ACTIVE_MODELS_CACHE and (now - CACHE_TIMESTAMP) < 14400:
+        return ACTIVE_MODELS_CACHE
+
+    target_key = api_key or DEFAULT_GEMINI_KEY
+    discovered = []
+    if target_key:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={target_key}"
+            resp = requests.get(url, timeout=10)
+            if resp.status_code == 200:
+                models = resp.json().get("models", [])
+                candidates = [
+                    m["name"].replace("models/", "")
+                    for m in models
+                    if "flash" in m.get("name", "")
+                    and "generateContent" in m.get("supportedGenerationMethods", [])
+                    and "tts" not in m.get("name", "")
+                ]
+                def sort_key(name: str):
+                    m_ver = re.search(r"gemini-(\d+(?:\.\d+)?)", name)
+                    ver = float(m_ver.group(1)) if m_ver else 0.0
+                    is_main = 1 if ("lite" not in name and "preview" not in name and "omni" not in name and "image" not in name) else 0
+                    return (is_main, ver)
+
+                candidates.sort(key=sort_key, reverse=True)
+                if candidates:
+                    discovered = candidates
+        except Exception:
+            pass
+
+    fallback = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3-flash-preview"]
+    result = [m for m in discovered] if discovered else fallback
+    for m in fallback:
+        if m not in result:
+            result.append(m)
+
+    ACTIVE_MODELS_CACHE = result
+    CACHE_TIMESTAMP = now
+    return result
 
 # ── Helper Functions ──────────────────────────────────────────
 
@@ -137,8 +185,10 @@ def call_gemini_vision(img_bytes: bytes, include_translation: bool = True, api_k
     }
     headers = {"Content-Type": "application/json"}
 
+    models_to_try = get_available_gemini_models(api_key)
     last_error = "Gagal memproses setelah beberapa kali percobaan ke Gemini."
-    for model_name in GEMINI_MODELS:
+
+    for model_name in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
         for attempt in range(2):
             try:
@@ -153,12 +203,20 @@ def call_gemini_vision(img_bytes: bytes, include_translation: bool = True, api_k
                 elif resp.status_code in (429, 503):
                     time.sleep(2 * (attempt + 1))
                     continue
+                elif resp.status_code == 404:
+                    # Model sudah tidak tersedia atau di-deprecate oleh Google, langsung lompat ke model berikutnya
+                    last_error = f"Gemini Error (404): {resp.text[:180]}"
+                    break
                 else:
                     last_error = f"Gemini Error ({resp.status_code}): {resp.text[:180]}"
                     break
             except Exception as e:
                 last_error = str(e)
                 time.sleep(1)
+
+    # Jika semua model gagal karena 404, bersihkan cache agar deteksi ulang model baru dari Google
+    if "404" in last_error:
+        get_available_gemini_models(api_key, force_refresh=True)
 
     raise HTTPException(status_code=500, detail=last_error)
 
