@@ -62,7 +62,13 @@ const MisykahCloud = {
         const rawTags = Array.isArray(f.tags) ? f.tags : [];
         const likes = rawTags.filter(t => typeof t === 'string' && t.startsWith('like:')).map(t => t.replace('like:', ''));
         const comments = rawTags.filter(t => t && typeof t === 'object' && t.type === 'cmt');
-        const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:'));
+        const photoObj = rawTags.find(t => t && typeof t === 'object' && t.type === 'photo');
+        const privacyObj = rawTags.find(t => t && typeof t === 'object' && t.type === 'privacy');
+        const cleanTags = rawTags.filter(t => typeof t === 'string' && !t.startsWith('like:') && !t.startsWith('privacy:') && !t.startsWith('photo:'));
+
+        const fotoUrl = f.fotoUrl || f.foto_url || (photoObj ? photoObj.url : null);
+        const isPrivate = f.isPrivate !== undefined ? !!f.isPrivate : (privacyObj ? !!privacyObj.isPrivate : rawTags.includes('privacy:private'));
+
         return {
           id: f.id,
           userId: f.user_id || f.userId,
@@ -72,6 +78,8 @@ const MisykahCloud = {
           arabicText: f.arabic_text || f.arabicText,
           isi: f.isi,
           sumber: f.sumber,
+          fotoUrl: fotoUrl,
+          isPrivate: isPrivate,
           tags: cleanTags,
           likes: likes,
           likesCount: likes.length,
@@ -104,11 +112,17 @@ const MisykahCloud = {
 
     async insert(item) {
       const client = initSupabaseClient();
-      // Siapkan tags kombinasi (clean tags + likes + comments)
-      const cleanTags = Array.isArray(item.tags) ? item.tags.filter(t => typeof t === 'string' && !t.startsWith('like:')) : [];
+      // Siapkan tags kombinasi (clean tags + likes + comments + photo + privacy)
+      const cleanTags = Array.isArray(item.tags) ? item.tags.filter(t => typeof t === 'string' && !t.startsWith('like:') && !t.startsWith('privacy:') && !t.startsWith('photo:')) : [];
       const likesList = Array.isArray(item.likes) ? item.likes.map(u => `like:${u}`) : [];
       const commentsList = Array.isArray(item.comments) ? item.comments : [];
       const combinedTags = [...cleanTags, ...likesList, ...commentsList];
+      if (item.fotoUrl) {
+        combinedTags.push({ type: 'photo', url: item.fotoUrl });
+      }
+      if (item.isPrivate) {
+        combinedTags.push({ type: 'privacy', isPrivate: true });
+      }
 
       if (!client) {
         const local = JSON.parse(localStorage.getItem('misykah_guest_faidah') || '[]');
@@ -116,6 +130,8 @@ const MisykahCloud = {
         const savedItem = { 
           ...item, 
           tags: cleanTags, 
+          fotoUrl: item.fotoUrl || null,
+          isPrivate: !!item.isPrivate,
           likes: item.likes || [], 
           likesCount: (item.likes || []).length,
           comments: commentsList,
@@ -758,16 +774,8 @@ const MisykahCloud = {
   renderCloudBadge(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
-
-    const isCloud = this.isReady();
-    container.innerHTML = `
-      <div style="display:inline-flex;align-items:center;gap:8px;background:${isCloud ? 'rgba(26,92,56,0.12)' : 'rgba(100,100,100,0.1)'};border:1px solid ${isCloud ? 'var(--primary)' : 'var(--cream-dark)'};border-radius:20px;padding:4px 12px;font-size:0.78rem;">
-        <span>${isCloud ? '🟢 Cloud Aktif (Supabase)' : '⚪ Mode Lokal'}</span>
-        <button onclick="MisykahCloud.openConfigModal()" style="background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700;padding:0;text-decoration:underline;">
-          ⚙️ Pengaturan Cloud
-        </button>
-      </div>
-    `;
+    // Bersihkan teks teknis database agar antarmuka santri bersih dan tenang
+    container.innerHTML = '';
   },
 
   openConfigModal() {

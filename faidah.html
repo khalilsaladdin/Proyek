@@ -66,9 +66,6 @@
       </div>
     </div>
 
-    <!-- Cloud Connection Status Badge -->
-    <div id="cloudStatusBadge" style="margin-bottom:14px;"></div>
-
     <!-- Quote -->
     <div class="quote-block mb-3">
       <div class="quote-arabic">قَيِّدُوا الْعِلْمَ بِالْكِتَابِ</div>
@@ -76,24 +73,45 @@
       <div class="quote-source">— Hadits Riwayat Ath-Thabarani & Al-Hakim</div>
     </div>
 
-    <!-- Feed Composer Card (Linimasa Santri) -->
-    <div class="feed-composer-card">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div class="comment-avatar" id="composerAvatar" style="width:38px;height:38px;font-size:0.95rem;">👤</div>
-        <div class="composer-trigger" style="flex:1;" onclick="openAddModal()">
-          <span>Apa faidah kitab atau mutiara ilmu yang antum kaji hari ini? Bagikan di sini...</span>
+    <!-- Simple Chat-Bar Composer (Linimasa Santri) -->
+    <div class="simple-composer-card">
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div class="comment-avatar" id="composerAvatar" style="width:38px;height:38px;font-size:0.95rem;flex-shrink:0;">👤</div>
+        <div style="flex:1;">
+          <textarea id="quickFaidahText" class="form-control composer-textarea" rows="2" placeholder="Tuliskan faidah ilmu, kutipan kitab, atau nash yang antum kaji hari ini..."></textarea>
+
+          <!-- Image Preview if photo chosen -->
+          <div id="quickPhotoPreviewWrap" style="display:none;position:relative;margin-top:10px;">
+            <img id="quickPhotoPreview" src="" style="max-height:160px;border-radius:8px;border:1px solid var(--cream-dark);object-fit:cover;display:block;">
+            <button type="button" onclick="clearQuickPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px;line-height:1;">✕</button>
+          </div>
+
+          <!-- Bottom Action Bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <!-- Photo Upload Button -->
+              <input type="file" id="quickPhotoInput" accept="image/*" style="display:none;" onchange="handleQuickPhotoSelect(event)">
+              <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('quickPhotoInput').click()" title="Unggah Foto Teks Asli Kitab">
+                📷 Foto Teks Kitab
+              </button>
+
+              <!-- Privacy Selector: Publik vs Diri Sendiri -->
+              <select id="quickPrivacySelect" class="form-control" style="width:auto;padding:5px 10px;font-size:0.82rem;font-weight:600;">
+                <option value="public">🌐 Bagikan ke Publik</option>
+                <option value="private">🔒 Untuk Diri Sendiri (Privat)</option>
+              </select>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="openAddModal()" title="Buka formulir rujukan lengkap">
+                ⚙️ Rujukan Lengkap
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="submitQuickFaidah()">
+                🚀 Bagikan Faidah
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="composer-quick-actions">
-        <button class="composer-quick-btn" onclick="openAddModal('kitab')">
-          <span style="font-size:1.15rem;">📚</span> Rujukan Kitab & Sanad
-        </button>
-        <button class="composer-quick-btn" onclick="openAddModal('arabic')">
-          <span style="font-size:1.15rem;">📜</span> Nash Arab & Dalil
-        </button>
-        <button class="composer-quick-btn" onclick="openAddModal('tadabbur')">
-          <span style="font-size:1.15rem;">💡</span> Intisari Faidah Ilmu
-        </button>
       </div>
     </div>
 
@@ -115,15 +133,15 @@
           <option value="Catatan Buku">Catatan Buku</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="openAddModal()">✨ + Tulis Faidah Kitab</button>
+      <button class="btn btn-primary" onclick="openAddModal()">✨ + Tulis Faidah Lengkap</button>
     </div>
 
     <!-- Quick Filter Tabs -->
     <div class="faidah-filter-tabs">
       <button class="faidah-tab-btn active" id="tab-all" onclick="setFaidahTab('all')">🌐 Linimasa Santri</button>
+      <button class="faidah-tab-btn" id="tab-private" onclick="setFaidahTab('private')">🔒 Catatan Pribadi Saya</button>
+      <button class="faidah-tab-btn" id="tab-my" onclick="setFaidahTab('my')">✍️ Faidah Publik Saya</button>
       <button class="faidah-tab-btn" id="tab-popular" onclick="setFaidahTab('popular')">🔥 Paling Bermanfaat</button>
-      <button class="faidah-tab-btn" id="tab-kitab" onclick="setFaidahTab('kitab')">📚 Berdasar Kitab</button>
-      <button class="faidah-tab-btn" id="tab-my" onclick="setFaidahTab('my')">✍️ Faidah Saya</button>
       <button class="faidah-tab-btn" id="tab-bookmarks" onclick="setFaidahTab('bookmarks')">🔖 Tersimpan</button>
     </div>
 
@@ -173,9 +191,36 @@
         ✍️ Faidah ini akan dipublikasikan atas nama: <strong id="modalAuthorName">Santri</strong>
       </div>
 
+      <!-- Pilihan Visibilitas (Publik vs Diri Sendiri) -->
+      <div class="form-group" style="background:var(--cream);padding:10px 14px;border-radius:8px;border:1px solid var(--cream-dark);">
+        <label class="form-label" style="font-weight:700;margin-bottom:6px;">Visibilitas Faidah *</label>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.88rem;">
+            <input type="radio" name="modalFaidahPrivacy" value="public" checked>
+            <span>🌐 <strong>Publik</strong> (Bagikan ke Linimasa Santri)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.88rem;">
+            <input type="radio" name="modalFaidahPrivacy" value="private">
+            <span>🔒 <strong>Privat</strong> (Khusus Diri Sendiri)</span>
+          </label>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Judul Mutiara Faidah *</label>
         <input type="text" id="faidahJudul" class="form-control" placeholder="Contoh: Kunci Keberkahan Waktu / Makna Khusyuk dalam Shalat" required>
+      </div>
+
+      <!-- Upload Foto Teks Asli Kitab -->
+      <div class="form-group">
+        <label class="form-label">Foto Teks Asli Kitab (Opsional)</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="file" id="modalFotoInput" accept="image/*" class="form-control" style="font-size:0.85rem;" onchange="handleModalPhotoSelect(event)">
+          <button type="button" id="modalFotoClearBtn" class="btn btn-outline btn-sm" style="display:none;" onclick="clearModalPhoto()">Hapus Foto</button>
+        </div>
+        <div id="modalPhotoPreviewWrap" style="display:none;margin-top:8px;">
+          <img id="modalPhotoPreview" src="" style="max-height:160px;border-radius:8px;border:1px solid var(--cream-dark);object-fit:cover;">
+        </div>
       </div>
 
       <!-- Bagian Rujukan Kitab Wajib (Amanah Ilmiah) -->
@@ -250,6 +295,15 @@
   </div>
 </div>
 
+<!-- LIGHTBOX MODAL: LIHAT TEKS ASLI KITAB -->
+<div class="modal-overlay" id="photoLightboxModal" onclick="closePhotoLightbox(event)">
+  <div style="position:relative;max-width:92vw;max-height:92vh;margin:auto;display:flex;flex-direction:column;align-items:center;">
+    <button type="button" onclick="closeModal('photoLightboxModal')" style="position:absolute;top:-38px;right:0;background:rgba(255,255,255,0.3);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;">✕</button>
+    <img id="lightboxImg" src="" style="max-width:100%;max-height:85vh;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.8);object-fit:contain;background:#000;">
+    <div id="lightboxCaption" style="color:#ffffff;font-size:0.85rem;margin-top:10px;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.8);">Teks Asli Kitab</div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/supabase-config.js"></script>
 <script src="assets/js/supabase-client.js"></script>
@@ -281,9 +335,6 @@
       logoutBtn.onclick = () => window.location.href = 'index.html#authHub';
     }
   }
-
-  // Render Cloud connection status pill
-  MisykahCloud.renderCloudBadge('cloudStatusBadge');
 
   let currentTab = 'all';
   let cachedFaidah = [];
@@ -390,6 +441,11 @@
       }
       cachedFaidah = local;
     }
+    // Bersihkan data dummy bertuliskan demo atau bot jika pernah tersimpan
+    cachedFaidah = cachedFaidah.filter(f => {
+      const txt = ((f.judul || '') + ' ' + (f.isi || '') + ' ' + (f.authorName || '')).toLowerCase();
+      return !txt.includes('demo') && !txt.includes('bot');
+    });
     syncCategoryDropdown();
     renderFaidah();
   }
@@ -532,13 +588,187 @@
     }
   }
 
+  // ── FOTO KITAB & KOMPRESI ──────────────────────────────────
+  let quickPhotoData = null;
+  let modalPhotoData = null;
+
+  function compressImage(file, maxWidth = 1200, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith('image/')) {
+        return reject(new Error('Bukan file gambar'));
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleQuickPhotoSelect(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      showToast('Memproses foto teks kitab...', 'info');
+      quickPhotoData = await compressImage(file, 1200, 0.82);
+      const imgEl = document.getElementById('quickPhotoPreview');
+      const wrap = document.getElementById('quickPhotoPreviewWrap');
+      if (imgEl && wrap) {
+        imgEl.src = quickPhotoData;
+        wrap.style.display = 'inline-block';
+      }
+      showToast('Foto teks kitab siap dilampirkan! 📷', 'success');
+    } catch(err) {
+      showToast('Gagal memproses gambar.', 'error');
+    }
+  }
+
+  function clearQuickPhoto() {
+    quickPhotoData = null;
+    const wrap = document.getElementById('quickPhotoPreviewWrap');
+    if (wrap) wrap.style.display = 'none';
+    const inp = document.getElementById('quickPhotoInput');
+    if (inp) inp.value = '';
+  }
+
+  async function handleModalPhotoSelect(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      modalPhotoData = await compressImage(file, 1200, 0.82);
+      const imgEl = document.getElementById('modalPhotoPreview');
+      const wrap = document.getElementById('modalPhotoPreviewWrap');
+      const clearBtn = document.getElementById('modalFotoClearBtn');
+      if (imgEl && wrap) {
+        imgEl.src = modalPhotoData;
+        wrap.style.display = 'block';
+      }
+      if (clearBtn) clearBtn.style.display = 'inline-block';
+      showToast('Foto teks kitab berhasil dipilih 📷', 'success');
+    } catch(err) {
+      showToast('Gagal memproses gambar.', 'error');
+    }
+  }
+
+  function clearModalPhoto() {
+    modalPhotoData = null;
+    const wrap = document.getElementById('modalPhotoPreviewWrap');
+    if (wrap) wrap.style.display = 'none';
+    const clearBtn = document.getElementById('modalFotoClearBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    const inp = document.getElementById('modalFotoInput');
+    if (inp) inp.value = '';
+  }
+
+  function openPhotoLightbox(url, title) {
+    const modal = document.getElementById('photoLightboxModal');
+    const img = document.getElementById('lightboxImg');
+    const cap = document.getElementById('lightboxCaption');
+    if (!modal || !img) return;
+    img.src = url;
+    if (cap) cap.textContent = title ? `Teks Asli: ${title}` : 'Teks Asli Kitab';
+    openModal('photoLightboxModal');
+  }
+
+  function closePhotoLightbox(e) {
+    if (e.target.id === 'photoLightboxModal') {
+      closeModal('photoLightboxModal');
+    }
+  }
+
+  function viewFaidahPhoto(id) {
+    const item = cachedFaidah.find(f => f.id === id);
+    if (!item || !item.fotoUrl) return;
+    openPhotoLightbox(item.fotoUrl, item.judul || 'Teks Asli Kitab');
+  }
+
+  // ── QUICK CHAT-BAR COMPOSER ────────────────────────────────
+  async function submitQuickFaidah() {
+    if (!session) {
+      showToast('Silakan masuk akun santri untuk membagikan faidah ilmu 🌿', 'info');
+      setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
+      return;
+    }
+    const textEl = document.getElementById('quickFaidahText');
+    const text = textEl ? textEl.value.trim() : '';
+    if (!text && !quickPhotoData) {
+      showToast('Tuliskan faidah ilmu atau lampirkan foto kitab terlebih dahulu!', 'warning');
+      return;
+    }
+
+    const privacy = document.getElementById('quickPrivacySelect').value;
+    const isPrivate = (privacy === 'private');
+
+    // Buat judul ringkas dari baris pertama
+    let judul = 'Faidah Kitab';
+    if (text) {
+      const firstLine = text.split('\n')[0].trim();
+      judul = firstLine.length > 55 ? firstLine.slice(0, 52) + '...' : firstLine;
+    } else if (quickPhotoData) {
+      judul = 'Kutipan Halaman Kitab';
+    }
+
+    const newItem = {
+      id: generateId(),
+      userId: session.userId,
+      authorName: session.name || 'Santri Misykah',
+      judul: judul,
+      kategori: 'Catatan Buku',
+      arabicText: '',
+      isi: text || 'Lampiran foto teks asli kitab.',
+      sumber: '',
+      fotoUrl: quickPhotoData || null,
+      isPrivate: isPrivate,
+      tags: isPrivate ? ['pribadi'] : ['faidah'],
+      likes: [],
+      likesCount: 0,
+      comments: [],
+      commentsCount: 0,
+      isPinned: false,
+      tanggal: todayStr()
+    };
+
+    try {
+      if (MisykahCloud.isReady()) {
+        await MisykahCloud.faidah.insert(newItem);
+      } else {
+        let list = getFaidahList();
+        list.unshift(newItem);
+        saveFaidahList(list);
+      }
+      textEl.value = '';
+      clearQuickPhoto();
+      showToast(isPrivate ? 'Faidah disimpan ke Catatan Pribadi 🔒' : 'Faidah berhasil dipublikasikan ke Linimasa! 🚀', 'success');
+      loadAllFaidah();
+    } catch(err) {
+      showToast('Gagal membagikan faidah.', 'error');
+    }
+  }
+
   function openAddModal(focusField) {
     if (!session) {
       showToast('Silakan masuk akun santri untuk membagikan faidah ilmu 🌿', 'info');
       setTimeout(() => { window.location.href = 'index.html#authHub'; }, 1200);
       return;
     }
-    document.getElementById('modalTitle').textContent = '📖 Bagikan Faidah Kitab';
+    document.getElementById('modalTitle').textContent = '📖 Tulis Faidah Kitab';
     document.getElementById('faidahId').value = '';
     document.getElementById('modalAuthorName').textContent = session.name || 'Santri Misykah';
     document.getElementById('faidahJudul').value = '';
@@ -552,6 +782,11 @@
     document.getElementById('faidahIsi').value = '';
     document.getElementById('faidahTags').value = '';
     document.getElementById('faidahPin').checked = false;
+
+    clearModalPhoto();
+    const publicRadio = document.querySelector('input[name="modalFaidahPrivacy"][value="public"]');
+    if (publicRadio) publicRadio.checked = true;
+
     openModal('faidahModal');
 
     if (focusField === 'arabic') {
@@ -583,6 +818,23 @@
     document.getElementById('faidahId').value = item.id;
     document.getElementById('modalAuthorName').textContent = item.authorName || session.name;
     document.getElementById('faidahJudul').value = item.judul;
+
+    // Set privacy
+    const privVal = item.isPrivate ? 'private' : 'public';
+    const rad = document.querySelector(`input[name="modalFaidahPrivacy"][value="${privVal}"]`);
+    if (rad) rad.checked = true;
+
+    // Set photo
+    if (item.fotoUrl) {
+      modalPhotoData = item.fotoUrl;
+      const imgEl = document.getElementById('modalPhotoPreview');
+      const wrap = document.getElementById('modalPhotoPreviewWrap');
+      const clearBtn = document.getElementById('modalFotoClearBtn');
+      if (imgEl && wrap) { imgEl.src = modalPhotoData; wrap.style.display = 'block'; }
+      if (clearBtn) clearBtn.style.display = 'inline-block';
+    } else {
+      clearModalPhoto();
+    }
 
     // Parse Kitab & Penulis & Bab from sumber
     const rawSumber = item.sumber || '';
@@ -644,6 +896,9 @@
     const kitabPenulis = document.getElementById('faidahKitabPenulis').value.trim();
     const kitabBab = document.getElementById('faidahKitabBab').value.trim();
 
+    const privacyChecked = document.querySelector('input[name="modalFaidahPrivacy"]:checked');
+    const isPrivate = privacyChecked ? (privacyChecked.value === 'private') : false;
+
     let kategori = document.getElementById('faidahKategori').value;
     if (kategori === '__custom__') {
       const custom = document.getElementById('faidahKategoriCustom').value.trim();
@@ -673,6 +928,8 @@
       arabicText,
       isi,
       sumber: sumberFormatted,
+      fotoUrl: modalPhotoData || (oldItem ? oldItem.fotoUrl : null),
+      isPrivate: isPrivate,
       tags,
       likes: existingLikes,
       likesCount: existingLikes.length,
@@ -834,14 +1091,22 @@
                           (f.tags && f.tags.some(t => typeof t === 'string' && t.toLowerCase().includes(search)));
       const matchCat = !category || f.kategori === category;
 
+      const isOwner = session && ((f.userId && f.userId === session.userId) || (f.authorName && f.authorName === session.name));
+      // Privasi: faidah bertanda privat hanya bisa dilihat oleh pemiliknya sendiri
+      if (f.isPrivate && !isOwner) return false;
+
       let matchTab = true;
-      if (currentTab === 'popular') {
-        matchTab = true; // Urutkan like terbanyak
-      } else if (currentTab === 'kitab') {
-        matchTab = !!f.sumber; // Hanya yang memiliki rujukan kitab
+      if (currentTab === 'all') {
+        // Linimasa Santri: Faidah Publik
+        matchTab = !f.isPrivate;
+      } else if (currentTab === 'private') {
+        // Catatan Pribadi Santri
+        matchTab = !!f.isPrivate && isOwner;
       } else if (currentTab === 'my') {
-        if (!session) matchTab = false;
-        else matchTab = (f.userId === session.userId) || (f.authorName === session.name);
+        // Faidah Publik Saya
+        matchTab = !f.isPrivate && isOwner;
+      } else if (currentTab === 'popular') {
+        matchTab = !f.isPrivate;
       } else if (currentTab === 'bookmarks') {
         matchTab = myBookmarks.has(f.id);
       }
@@ -866,9 +1131,12 @@
     if (filtered.length === 0) {
       let emptyMsg = 'Belum ada faidah kitab di linimasa ini';
       let emptySub = 'Jadilah yang pertama membagikan mutiara ilmu dari kitab yang antum pelajari!';
-      if (currentTab === 'my') {
-        emptyMsg = 'Anda belum menerbitkan faidah kitab';
-        emptySub = 'Tekan kolom "Apa faidah kitab hari ini..." di atas untuk mulai berbagi mutiara ilmu.';
+      if (currentTab === 'private') {
+        emptyMsg = 'Belum ada catatan faidah pribadi';
+        emptySub = 'Tulis faidah khusus untuk diri Anda sendiri dengan memilih opsi "🔒 Catatan Pribadi" di composer atas.';
+      } else if (currentTab === 'my') {
+        emptyMsg = 'Anda belum menerbitkan faidah publik';
+        emptySub = 'Tekan kolom "Apa faidah kitab hari ini..." di atas untuk mulai berbagi mutiara ilmu kepada thullabul ilmi.';
       } else if (currentTab === 'bookmarks') {
         emptyMsg = 'Belum ada catatan tersimpan';
         emptySub = 'Tekan ikon 🔖 Simpan pada faidah kitab yang ingin Anda pelajari kembali nanti.';
@@ -917,7 +1185,10 @@
         <div class="faidah-card ${f.isPinned ? 'pinned' : ''}">
           <div class="faidah-header">
             <div>
-              <span class="faidah-badge">${escapeHtml(f.kategori || 'Faidah Kitab')}</span>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+                <span class="faidah-badge">${escapeHtml(f.kategori || 'Faidah Kitab')}</span>
+                ${f.isPrivate ? '<span class="faidah-badge" style="background:#4a5568;color:#fff;">🔒 Catatan Pribadi</span>' : ''}
+              </div>
               <div class="faidah-title mt-1">${escapeHtml(f.judul)}</div>
               <div class="faidah-author-pill">
                 <span class="faidah-author-avatar">${authorInitial}</span>
@@ -940,6 +1211,14 @@
                   ${kitabBab ? ` • 📖 ${escapeHtml(kitabBab)}` : ''}
                 </div>
               </div>
+            </div>
+          ` : ''}
+
+          <!-- Foto Teks Asli Kitab (Jika Ada) -->
+          ${f.fotoUrl ? `
+            <div class="faidah-photo-thumb" onclick="viewFaidahPhoto('${f.id}')" title="Klik untuk memperbesar teks asli kitab">
+              <img src="${escapeHtml(f.fotoUrl)}" alt="Teks Asli Kitab" loading="lazy">
+              <div class="photo-badge-overlay">📷 Ketuk untuk perbesar foto teks kitab</div>
             </div>
           ` : ''}
 

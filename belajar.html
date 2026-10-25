@@ -66,9 +66,6 @@
       </div>
     </div>
 
-    <!-- Cloud Connection Status Badge -->
-    <div id="cloudBelajarBadge" style="margin-bottom:14px;"></div>
-
     <!-- Quote -->
     <div class="quote-block mb-3">
       <div class="quote-arabic">وَتَعَاوَنُوا عَلَى الْبِرِّ وَالتَّقْوَىٰ</div>
@@ -86,66 +83,83 @@
 
     <!-- SECTION 1: RUANG BELAJAR MANDIRI & HALAQAH (PUBLIK / PRIVAT PIN + RADAR SENSOR JARAK) -->
     <div id="sectionHalaqah">
-      <!-- Radar Proximity Control Panel -->
-      <div class="radar-control-panel">
-        <div class="radar-header-row">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div class="gps-status-badge" id="gpsStatusBadge">
+      <!-- Sleek Top Toolbar with 3-Dots Bubble Popover for Distance & GPS -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;">
+          <!-- Search Box -->
+          <input type="text" id="searchRuangInput" class="form-control" placeholder="🔍 Cari nama ruang / kitab / tempat..." style="max-width:280px;padding:8px 14px;font-size:0.85rem;" oninput="applyFilters()">
+
+          <!-- 3-Dots Bubble for Distance & Location -->
+          <div class="radar-bubble-wrapper">
+            <button type="button" class="radar-bubble-btn" id="radarBubbleBtn" onclick="toggleRadarMenu(event)">
               <span class="gps-dot" id="gpsDot"></span>
-              <span id="gpsText">📍 Lokasi Santri: Belum Terdeteksi</span>
-            </div>
-            <button type="button" class="btn btn-outline btn-sm" onclick="requestUserLocation()" id="btnDetectGps">
-              📍 Deteksi GPS Saya
+              <span id="bubbleDistanceLabel">📍 Jarak: Semua</span>
+              <span style="font-size:1.15rem;font-weight:700;line-height:1;margin-left:2px;color:var(--primary);">⋮</span>
             </button>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:0.8rem;color:var(--text-muted);">atau</span>
-              <select id="quickCitySelect" class="form-control" style="padding:5px 10px;font-size:0.82rem;width:auto;" onchange="setQuickCity(this.value)">
-                <option value="">-- Pilih Kota / Titik Cepat --</option>
-                <option value="-6.2088,106.8456|Jakarta Pusat">Jakarta Pusat (Monas / Istiqlal)</option>
-                <option value="-6.2351,106.7993|Jakarta Selatan">Jakarta Selatan (Kebayoran)</option>
-                <option value="-6.4025,106.9620|Cileungsi / Bogor Timur">Cileungsi (Bogor Timur)</option>
-                <option value="-6.5971,106.8060|Bogor Kota">Bogor Kota</option>
-                <option value="-6.9175,107.6191|Bandung">Bandung</option>
-                <option value="-6.2383,106.9756|Bekasi">Bekasi</option>
-                <option value="-6.4025,106.7942|Depok">Depok</option>
-                <option value="-6.9667,110.4167|Semarang">Semarang</option>
-                <option value="-7.7956,110.3695|Yogyakarta">Yogyakarta</option>
-                <option value="-7.5755,110.8243|Surakarta / Solo">Surakarta / Solo</option>
-                <option value="-7.2575,112.7521|Surabaya">Surabaya</option>
-                <option value="-7.9666,112.6326|Malang">Malang</option>
-                <option value="3.5952,98.6722|Medan">Medan</option>
-                <option value="-5.1477,119.4327|Makassar">Makassar</option>
-              </select>
+
+            <!-- Popover Menu -->
+            <div class="radar-bubble-menu" id="radarBubbleMenu">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-weight:700;font-size:0.85rem;color:var(--primary-dark);">📍 Sensor Jarak & Lokasi</span>
+                <span class="badge badge-gold" id="gpsStatusShort" style="font-size:0.7rem;">GPS</span>
+              </div>
+
+              <!-- Location Detection -->
+              <div style="background:var(--cream);padding:10px;border-radius:8px;margin-bottom:10px;">
+                <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:6px;" id="gpsText">Lokasi belum terdeteksi</div>
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="requestUserLocation()" id="btnDetectGps" style="flex:1;font-size:0.78rem;padding:5px 8px;">
+                    📍 Deteksi GPS
+                  </button>
+                  <select id="quickCitySelect" class="form-control" style="font-size:0.78rem;padding:4px 6px;width:120px;" onchange="setQuickCity(this.value)">
+                    <option value="">Pilih Kota...</option>
+                    <option value="-6.2088,106.8456|Jakarta Pusat">Jakarta</option>
+                    <option value="-6.5971,106.8060|Bogor">Bogor</option>
+                    <option value="-6.9175,107.6191|Bandung">Bandung</option>
+                    <option value="-7.7956,110.3695|Yogyakarta">Yogya</option>
+                    <option value="-7.5755,110.8243|Solo">Solo</option>
+                    <option value="-7.2575,112.7521|Surabaya">Surabaya</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Distance Range Selection -->
+              <div style="font-weight:600;font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;">Jangkauan Jarak:</div>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <button type="button" class="radar-menu-item active" data-range="all" onclick="selectRangeFromMenu('all', 'Semua Jarak', this)">
+                  <span>🌐 Semua Jarak & Online</span>
+                </button>
+                <button type="button" class="radar-menu-item" data-range="5" onclick="selectRangeFromMenu(5, '≤ 5 km', this)">
+                  <span>🟢 Dekat Sekali (≤ 5 km)</span>
+                </button>
+                <button type="button" class="radar-menu-item" data-range="25" onclick="selectRangeFromMenu(25, '≤ 25 km', this)">
+                  <span>🟡 Satu Kota (≤ 25 km)</span>
+                </button>
+                <button type="button" class="radar-menu-item" data-range="100" onclick="selectRangeFromMenu(100, '≤ 100 km', this)">
+                  <span>📍 Regional (≤ 100 km)</span>
+                </button>
+                <button type="button" class="radar-menu-item" data-range="online" onclick="selectRangeFromMenu('online', 'Khusus Online', this)">
+                  <span>💻 Khusus Online</span>
+                </button>
+              </div>
+
+              <!-- Privacy Filter inside Popover -->
+              <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--cream-dark);">
+                <div style="font-weight:600;font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;">Tipe Akses:</div>
+                <select id="privacyFilter" class="form-control" style="width:100%;font-size:0.8rem;padding:5px 8px;" onchange="applyFilters()">
+                  <option value="all">Semua (Publik & Privat)</option>
+                  <option value="public">🌐 Terbuka Publik Saja</option>
+                  <option value="private">🔒 Privat (Butuh PIN) Saja</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div class="flex gap-1 flex-wrap">
-            <button class="btn btn-outline btn-sm" onclick="openJoinPinModal()">🔑 Masuk via Kode PIN</button>
-            <button class="btn btn-primary btn-sm" onclick="openNewHalaqahModal()">+ Buka Ruang Belajar Baru</button>
           </div>
         </div>
 
-        <div class="radar-filter-row">
-          <div>
-            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">
-              🎚️ Penjangka Jarak (Jarak dari Lokasi Antum):
-            </div>
-            <div class="proximity-pills">
-              <button class="proximity-pill active" data-range="all" onclick="setDistanceFilter('all', this)">🌐 Semua (Online & Offline)</button>
-              <button class="proximity-pill" data-range="5" onclick="setDistanceFilter(5, this)">📍 Dekat Sekali (≤ 5 km)</button>
-              <button class="proximity-pill" data-range="25" onclick="setDistanceFilter(25, this)">📍 Satu Kota (≤ 25 km)</button>
-              <button class="proximity-pill" data-range="100" onclick="setDistanceFilter(100, this)">📍 Regional (≤ 100 km)</button>
-              <button class="proximity-pill" data-range="online" onclick="setDistanceFilter('online', this)">💻 Khusus Online</button>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <select id="privacyFilter" class="form-control" style="padding:6px 10px;font-size:0.83rem;width:auto;" onchange="applyFilters()">
-              <option value="all">Semua Tipe Akses</option>
-              <option value="public">🌐 Terbuka Publik</option>
-              <option value="private">🔒 Privat (Butuh PIN)</option>
-            </select>
-            <input type="text" id="searchRuangInput" class="form-control" placeholder="🔍 Cari ruang / kitab / masjid..." style="width:210px;padding:6px 12px;font-size:0.83rem;" oninput="applyFilters()">
-          </div>
+        <!-- Action Buttons -->
+        <div class="flex gap-1 flex-wrap">
+          <button class="btn btn-outline btn-sm" onclick="openJoinPinModal()">🔑 Masuk via PIN</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewHalaqahModal()">+ Buka Ruang Belajar</button>
         </div>
       </div>
 
@@ -486,9 +500,6 @@
     }
   }
 
-  // Render Cloud connection status pill
-  MisykahCloud.renderCloudBadge('cloudBelajarBadge');
-
   // Tab switching
   function switchHalaqahTab(tab) {
     document.querySelectorAll('.halaqah-tab').forEach(b => b.classList.remove('active'));
@@ -549,6 +560,14 @@
     }
 
     let halaqahList = getGlobalData('halaqah_rooms');
+    // Bersihkan data dummy/demo dari cache lokal jika pernah ada
+    if (Array.isArray(halaqahList)) {
+      halaqahList = halaqahList.filter(h => {
+        const str = ((h.judul || '') + ' ' + (h.deskripsi || '') + ' ' + (h.creatorName || '')).toLowerCase();
+        return !str.includes('demo') && !str.includes('bot');
+      });
+      saveGlobalData('halaqah_rooms', halaqahList);
+    }
     if (!halaqahList || halaqahList.length === 0) {
       halaqahList = [
         {
@@ -827,20 +846,60 @@
     }
   } catch(e) {}
 
+  function toggleRadarMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('radarBubbleMenu');
+    if (!menu) return;
+    menu.classList.toggle('active');
+  }
+
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('radarBubbleMenu');
+    const btn = document.getElementById('radarBubbleBtn');
+    if (menu && menu.classList.contains('active')) {
+      if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.remove('active');
+      }
+    }
+  });
+
+  function selectRangeFromMenu(range, label, btnEl) {
+    currentDistanceFilter = range;
+    const labelEl = document.getElementById('bubbleDistanceLabel');
+    if (labelEl) labelEl.textContent = `📍 Jarak: ${label}`;
+
+    document.querySelectorAll('.radar-menu-item').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    const menu = document.getElementById('radarBubbleMenu');
+    if (menu) menu.classList.remove('active');
+
+    renderHalaqah();
+  }
+
   function updateUserLocationUI() {
     const dot = document.getElementById('gpsDot');
     const text = document.getElementById('gpsText');
     const btn = document.getElementById('btnDetectGps');
+    const shortBadge = document.getElementById('gpsStatusShort');
     if (!text) return;
 
     if (userLocation.lat !== null && userLocation.lng !== null) {
       if (dot) dot.classList.add('active');
-      text.textContent = `📍 Posisi: ${userLocation.name} (${Number(userLocation.lat).toFixed(3)}, ${Number(userLocation.lng).toFixed(3)})`;
-      if (btn) btn.textContent = '✓ Lokasi Terdeteksi';
+      text.textContent = `📍 ${userLocation.name} (${Number(userLocation.lat).toFixed(2)}, ${Number(userLocation.lng).toFixed(2)})`;
+      if (btn) btn.textContent = '✓ GPS Aktif';
+      if (shortBadge) {
+        shortBadge.textContent = 'Aktif 🟢';
+        shortBadge.className = 'badge badge-success';
+      }
     } else {
       if (dot) dot.classList.remove('active');
-      text.textContent = '📍 Lokasi Santri: Belum Terdeteksi';
-      if (btn) btn.textContent = '📍 Deteksi GPS Saya';
+      text.textContent = 'Lokasi GPS belum terdeteksi';
+      if (btn) btn.textContent = '📍 Deteksi GPS';
+      if (shortBadge) {
+        shortBadge.textContent = 'GPS';
+        shortBadge.className = 'badge badge-gold';
+      }
     }
   }
 
