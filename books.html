@@ -616,6 +616,9 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/supabase-client.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
   requireAuth();
@@ -810,6 +813,22 @@
     }
   }
 
+  
+  async function reattachBookFile(bookId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/pdf,.pdf';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      showToast('Menyimpan PDF ke perangkat ini...', 'info');
+      await MisykahDB.saveFile(bookId, file, { name: file.name, type: 'application/pdf', size: file.size });
+      showToast('File PDF berhasil tersimpan di perangkat ini! Membuka kitab...', 'success');
+      bacaBuku(bookId);
+    };
+    input.click();
+  }
+
   async function bacaBuku(id) {
     const item = getData().find(b => b.id === id);
     if (!item) return;
@@ -836,7 +855,11 @@
       }
 
       if (!blob) {
-        showToast('File PDF tidak ditemukan di database browser.', 'error');
+        if (confirm(`File fisik PDF "${item.judul}" belum tersimpan di memori perangkat ini (tersimpan di perangkat awal saat Anda mengunggah).\n\nApakah Anda ingin memilih file PDF dari perangkat ini agar langsung bisa dibuka dan dibaca?`)) {
+          reattachBookFile(id);
+        } else {
+          showToast('File fisik PDF belum tersimpan di perangkat ini.', 'info');
+        }
         return;
       }
 

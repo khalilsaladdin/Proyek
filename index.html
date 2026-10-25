@@ -425,7 +425,7 @@
         }
         const localUser = users.find(u => u.username.toLowerCase() === username);
         if (!localUser) {
-          throw new Error('Username tidak ditemukan di perangkat ini.');
+          throw new Error(`Username "@${username}" belum terdaftar. Silakan klik tab "Daftar Akun Baru" di atas.`);
         }
         const ok = await verifyPassword(password, localUser.password);
         if (!ok) {

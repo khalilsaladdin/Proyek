@@ -88,46 +88,104 @@
 
 <!-- Modal Upload -->
 <div class="modal-overlay" id="modalUpload">
-  <div class="modal">
+  <div class="modal" style="max-width:560px;">
     <div class="modal-header">
-      <div class="modal-title">⬆️ Upload Audio Muhadharah</div>
+      <div class="modal-title">⬆️ Tambah Kajian Muhadharah</div>
       <button class="modal-close" onclick="closeModal('modalUpload')">✕</button>
     </div>
     <div class="modal-body">
+      <!-- Pilihan Sumber: Link YouTube vs File MP3 Lokal -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;background:var(--cream-dark);padding:5px;border-radius:var(--border-radius-sm);">
+        <button type="button" class="btn btn-sm" id="tabSourceYoutube" onclick="switchUploadSource('youtube')" style="flex:1;background:var(--primary);color:#fff;font-weight:600;border:none;">
+          🔴 Link YouTube (Praktis)
+        </button>
+        <button type="button" class="btn btn-sm" id="tabSourceFile" onclick="switchUploadSource('file')" style="flex:1;background:transparent;color:var(--text-dark);border:none;">
+          📁 File MP3 / Audio Lokal
+        </button>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Judul Muhadharah <span style="color:red">*</span></label>
-        <input type="text" id="inpJudul" class="form-control" placeholder="Judul ceramah / materi kajian">
+        <input type="text" id="inpJudul" class="form-control" placeholder="Contoh: Keutamaan Adab & Keikhlasan Thalabul Ilmi">
       </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Nama Ustadz / Pemateri <span style="color:red">*</span></label>
-          <input type="text" id="inpUstadz" class="form-control" placeholder="Nama ustadz / ustadzah">
+          <input type="text" id="inpUstadz" class="form-control" placeholder="Contoh: Ustadz Dr. Firanda Andirja">
         </div>
         <div class="form-group">
           <label class="form-label">Topik / Tema</label>
-          <input type="text" id="inpTopik" class="form-control" placeholder="Contoh: Tafsir, Hadits, Tazkiyah">
+          <input type="text" id="inpTopik" class="form-control" placeholder="Contoh: Tazkiyatun Nufus">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Tanggal Rekaman</label>
+        <label class="form-label">Tanggal Rekaman / Kajian</label>
         <input type="date" id="inpTanggal" class="form-control">
       </div>
-      <div class="form-group">
-        <label class="form-label">Pilih File Audio <span style="color:red">*</span></label>
-        <input type="file" id="inpFile" class="form-control" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" onchange="onFileSelect(this)">
-        <p class="form-hint">Mendukung format MP3, WAV, OGG, M4A. File disimpan aman di IndexedDB Browser.</p>
+
+      <!-- Sumber 1: Link YouTube -->
+      <div id="sectionYoutube">
+        <div class="form-group">
+          <label class="form-label">Salin & Tempel Link YouTube <span style="color:red">*</span></label>
+          <input type="url" id="inpYoutubeUrl" class="form-control" placeholder="Contoh: https://www.youtube.com/watch?v=... atau https://youtu.be/..." oninput="onYoutubeUrlChange(this.value)">
+          <p class="form-hint" style="color:var(--text-muted);font-size:0.75rem;margin-top:5px;line-height:1.4;">
+            💡 <strong>Keuntungan Link YouTube:</strong> Anda tidak perlu repot men-convert video ke MP3! Hemat kuota & memori, serta langsung bisa diputar di semua perangkat (Laptop & HP santri).
+          </p>
+        </div>
+
+        <div id="ytPreviewBox" style="display:none;background:rgba(204,0,0,0.06);border:1px solid rgba(204,0,0,0.25);border-radius:var(--border-radius-sm);padding:10px 14px;margin-bottom:12px;align-items:center;gap:12px;">
+          <img id="ytPreviewThumb" src="" alt="Thumbnail" style="width:76px;height:50px;object-fit:cover;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.15);flex-shrink:0;">
+          <div style="font-size:0.8rem;line-height:1.4;">
+            <div style="font-weight:700;color:#c00;">✅ Video Terdeteksi</div>
+            <div id="ytPreviewId" style="color:var(--text-muted);font-size:0.75rem;">ID: -</div>
+          </div>
+        </div>
       </div>
-      <div id="fileInfo" style="display:none;background:var(--cream-dark);border-radius:var(--border-radius-sm);padding:10px 14px;font-size:0.82rem;">
-        <span id="fileInfoText"></span>
+
+      <!-- Sumber 2: File Audio Lokal -->
+      <div id="sectionFile" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Pilih File Audio Lokal <span style="color:red">*</span></label>
+          <input type="file" id="inpFile" class="form-control" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" onchange="onFileSelect(this)">
+          <p class="form-hint" style="color:var(--text-muted);font-size:0.75rem;margin-top:5px;">
+            Mendukung MP3, WAV, OGG, M4A. File disimpan independen di database IndexedDB perangkat ini.
+          </p>
+        </div>
+        <div id="fileInfo" style="display:none;background:var(--cream-dark);border-radius:var(--border-radius-sm);padding:10px 14px;font-size:0.82rem;">
+          <span id="fileInfoText"></span>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modalUpload')">Batal</button>
-      <button class="btn btn-primary" id="btnUpload" onclick="uploadAudio()">💾 Simpan Audio</button>
+      <button class="btn btn-primary" id="btnUpload" onclick="uploadAudio()">💾 Simpan Muhadharah</button>
     </div>
   </div>
 </div>
 
+<!-- Modal Pemutar Video/Audio YouTube Terintegrasi -->
+<div class="modal-overlay" id="modalYoutubePlayer">
+  <div class="modal" style="max-width:760px;width:95%;padding:0;overflow:hidden;border-radius:var(--border-radius);">
+    <div class="modal-header" style="padding:14px 20px;background:var(--primary-dark);color:#fff;">
+      <div class="modal-title" id="ytPlayerTitle" style="color:#fff;font-size:1rem;">🎧 Pemutar Kajian YouTube</div>
+      <button class="modal-close" onclick="closeYoutubePlayer()" style="color:#fff;">✕</button>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
+      <iframe id="ytIframe" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <div class="modal-footer" style="padding:12px 20px;display:flex;justify-content:space-between;align-items:center;background:var(--cream);flex-wrap:wrap;gap:8px;">
+      <div id="ytPlayerMeta" style="font-size:0.82rem;color:var(--text-muted);"></div>
+      <div style="display:flex;gap:8px;">
+        <a id="ytOpenExternalBtn" href="#" target="_blank" class="btn btn-outline btn-sm" style="font-size:0.8rem;">🔗 Buka di YouTube</a>
+        <button class="btn btn-primary btn-sm" onclick="closeYoutubePlayer()">✕ Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/supabase-client.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
   requireAuth();
@@ -140,7 +198,72 @@
   function getData() { return getUserData('muhadharah', session.userId); }
   function saveData(d) { saveUserData('muhadharah', session.userId, d); }
 
+  let currentUploadSource = 'youtube';
   let selectedFileObj = null;
+
+  function switchUploadSource(source) {
+    currentUploadSource = source;
+    const isYt = source === 'youtube';
+    document.getElementById('sectionYoutube').style.display = isYt ? 'block' : 'none';
+    document.getElementById('sectionFile').style.display = isYt ? 'none' : 'block';
+
+    const tabYt = document.getElementById('tabSourceYoutube');
+    const tabFile = document.getElementById('tabSourceFile');
+    if (isYt) {
+      tabYt.style.background = 'var(--primary)';
+      tabYt.style.color = '#fff';
+      tabYt.style.fontWeight = '600';
+      tabFile.style.background = 'transparent';
+      tabFile.style.color = 'var(--text-dark)';
+      tabFile.style.fontWeight = 'normal';
+    } else {
+      tabFile.style.background = 'var(--primary)';
+      tabFile.style.color = '#fff';
+      tabFile.style.fontWeight = '600';
+      tabYt.style.background = 'transparent';
+      tabYt.style.color = 'var(--text-dark)';
+      tabYt.style.fontWeight = 'normal';
+    }
+  }
+
+  function extractYouTubeId(urlOrId) {
+    if (!urlOrId) return null;
+    const str = urlOrId.trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+    const match = str.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/i);
+    return (match && match[1]) ? match[1] : null;
+  }
+
+  function onYoutubeUrlChange(val) {
+    const ytId = extractYouTubeId(val);
+    const previewBox = document.getElementById('ytPreviewBox');
+    const previewThumb = document.getElementById('ytPreviewThumb');
+    const previewId = document.getElementById('ytPreviewId');
+    if (ytId) {
+      previewThumb.src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+      previewId.textContent = `ID Video: ${ytId} · Gambar terdeteksi`;
+      previewBox.style.display = 'flex';
+    } else {
+      previewBox.style.display = 'none';
+    }
+  }
+
+  function playYoutubeVideo(ytId, judul, ustadz, url) {
+    // Hentikan pemutaran audio lokal jika sedang berjalan
+    document.querySelectorAll('audio').forEach(a => a.pause());
+    document.querySelectorAll('[id^="btnPlay_"]').forEach(b => b.innerHTML = '▶️ Putar');
+
+    document.getElementById('ytPlayerTitle').textContent = `🎧 ${judul}`;
+    document.getElementById('ytPlayerMeta').textContent = `👤 Pemateri: ${ustadz}`;
+    document.getElementById('ytOpenExternalBtn').href = url || `https://www.youtube.com/watch?v=${ytId}`;
+    document.getElementById('ytIframe').src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&enablejsapi=1`;
+    openModal('modalYoutubePlayer');
+  }
+
+  function closeYoutubePlayer() {
+    document.getElementById('ytIframe').src = '';
+    closeModal('modalYoutubePlayer');
+  }
 
   function onFileSelect(input) {
     const file = input.files[0];
@@ -162,24 +285,63 @@
 
     if (!judul) { showToast('Judul tidak boleh kosong!', 'error'); return; }
     if (!ustadz) { showToast('Nama pemateri diperlukan!', 'error'); return; }
-    if (!selectedFileObj) { showToast('Pilih file audio terlebih dahulu!', 'error'); return; }
 
     const btn = document.getElementById('btnUpload');
+
+    if (currentUploadSource === 'youtube') {
+      const rawUrl = document.getElementById('inpYoutubeUrl').value.trim();
+      const ytId = extractYouTubeId(rawUrl);
+      if (!ytId) {
+        showToast('Link YouTube tidak valid. Mohon masukkan link YouTube yang benar (contoh: https://youtu.be/... atau https://www.youtube.com/watch?v=...)', 'error');
+        return;
+      }
+
+      btn.innerHTML = '<span class="loader"></span> Menyimpan Link YouTube...';
+      btn.disabled = true;
+
+      const item = {
+        id: generateId(),
+        type: 'youtube',
+        judul: judul,
+        ustadz: ustadz,
+        topik: topik,
+        tanggal: tanggal,
+        youtubeId: ytId,
+        youtubeUrl: rawUrl,
+        thumbnail: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+        createdAt: todayStr()
+      };
+
+      const data = getData();
+      data.unshift(item);
+      saveData(data);
+
+      closeModal('modalUpload');
+      resetForm();
+      showToast('Kajian YouTube berhasil ditambahkan! Siap diputar di HP & Laptop 🔴', 'success');
+      renderList();
+      btn.innerHTML = '💾 Simpan Muhadharah';
+      btn.disabled = false;
+      return;
+    }
+
+    // Mode File MP3 / Audio Lokal
+    if (!selectedFileObj) { showToast('Pilih file audio terlebih dahulu!', 'error'); return; }
+
     btn.innerHTML = '<span class="loader"></span> Menyimpan ke IndexedDB...';
     btn.disabled = true;
 
     try {
       const id = generateId();
-      // Store raw Blob / File in IndexedDB
       await MisykahDB.saveFile(id, selectedFileObj, {
         name: selectedFileObj.name,
         type: selectedFileObj.type || 'audio/mp3',
         size: selectedFileObj.size
       });
 
-      // Store lightweight metadata in localStorage
       const item = {
         id: id,
+        type: 'file',
         judul: judul,
         ustadz: ustadz,
         topik: topik,
@@ -196,14 +358,14 @@
 
       closeModal('modalUpload');
       resetForm();
-      showToast('Audio berhasil disimpan via IndexedDB! 🎧', 'success');
+      showToast('Audio berhasil disimpan permanen di database browser! 🎧', 'success');
       renderList();
     } catch (err) {
       console.error(err);
       showToast('Gagal menyimpan file audio ke database browser.', 'error');
     }
 
-    btn.innerHTML = '💾 Simpan Audio';
+    btn.innerHTML = '💾 Simpan Muhadharah';
     btn.disabled = false;
   }
 
@@ -212,6 +374,8 @@
     document.getElementById('inpUstadz').value = '';
     document.getElementById('inpTopik').value = '';
     document.getElementById('inpTanggal').value = todayStr();
+    document.getElementById('inpYoutubeUrl').value = '';
+    document.getElementById('ytPreviewBox').style.display = 'none';
     document.getElementById('inpFile').value = '';
     document.getElementById('fileInfo').style.display = 'none';
     selectedFileObj = null;
@@ -229,6 +393,21 @@
     renderList();
   }
 
+  async function reattachAudioFile(audioId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*,.mp3,.wav,.ogg,.m4a,.aac';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      showToast('Menyimpan file audio ke perangkat ini...', 'info');
+      await MisykahDB.saveFile(audioId, file, { name: file.name, type: file.type || 'audio/mp3', size: file.size });
+      showToast('File audio berhasil terpasang di perangkat ini! 🎧', 'success');
+      renderList();
+    };
+    input.click();
+  }
+
   function renderList() {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const data = getData();
@@ -240,11 +419,55 @@
     const el = document.getElementById('audioList');
 
     if (filtered.length === 0) {
-      el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">🎧</span><h3>Belum ada audio muhadharah</h3><p>Upload rekaman ceramah atau kajian untuk memulai</p></div>`;
+      el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">🎧</span><h3>Belum ada audio muhadharah</h3><p>Upload rekaman ceramah atau masukkan link YouTube untuk memulai</p></div>`;
       return;
     }
 
     el.innerHTML = filtered.map((a, idx) => {
+      const isYt = a.type === 'youtube' || !!a.youtubeId;
+
+      if (isYt) {
+        const thumbUrl = a.thumbnail || `https://img.youtube.com/vi/${a.youtubeId}/hqdefault.jpg`;
+        const safeJudul = escapeHtml(a.judul).replace(/'/g, "\\'");
+        const safeUstadz = escapeHtml(a.ustadz).replace(/'/g, "\\'");
+        const safeUrl = escapeHtml(a.youtubeUrl || `https://www.youtube.com/watch?v=${a.youtubeId}`).replace(/'/g, "\\'");
+
+        return `
+          <div class="audio-card" style="border-top:4px solid #cc0000;">
+            <div class="audio-card-header">
+              <div style="position:relative;width:72px;height:52px;border-radius:6px;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.15);background:#000;">
+                <img src="${thumbUrl}" alt="Thumb" style="width:100%;height:100%;object-fit:cover;">
+                <div style="position:absolute;inset:0;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;">▶️</div>
+              </div>
+              <div class="audio-info">
+                <div class="audio-title">${escapeHtml(a.judul)}</div>
+                <div class="audio-meta">
+                  <div>👤 ${escapeHtml(a.ustadz)}</div>
+                  ${a.topik ? `<div>🏷 ${escapeHtml(a.topik)}</div>` : ''}
+                  <div>📅 ${formatDate(a.tanggal)} <span style="background:#cc0000;color:#fff;padding:1px 6px;border-radius:8px;font-size:0.68rem;font-weight:600;margin-left:4px;">🔴 YouTube Cloud</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- YouTube Play Controls -->
+            <div style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+              <button class="btn btn-primary btn-sm" onclick="playYoutubeVideo('${a.youtubeId}', '${safeJudul}', '${safeUstadz}', '${safeUrl}')" style="background:#cc0000;border-color:#cc0000;flex:1;">
+                ▶️ Putar Video / Audio
+              </button>
+              <a href="${a.youtubeUrl || `https://www.youtube.com/watch?v=${a.youtubeId}`}" target="_blank" class="btn btn-outline btn-sm" title="Buka di YouTube" style="padding:6px 12px;font-size:0.8rem;">
+                🔗 YouTube
+              </a>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid var(--cream-dark);">
+              <span style="font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">🌐 Multi-Perangkat (Laptop & HP)</span>
+              <button class="btn btn-danger btn-sm" onclick="hapus('${a.id}')">🗑 Hapus</button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Audio Lokal File
       const sizeStr = a.fileSize ? MisykahDB.formatBytes(a.fileSize) : '';
       return `
         <div class="audio-card">
@@ -291,14 +514,14 @@
           </div>
 
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
-            <span style="font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">📁 ${a.fileName || 'audio'}</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">📁 ${a.fileName || 'audio lokal'}</span>
             <button class="btn btn-danger btn-sm" onclick="hapus('${a.id}')">🗑 Hapus</button>
           </div>
         </div>
       `;
     }).join('');
 
-    // Attach listeners
+    // Attach listeners for local audio elements
     filtered.forEach((a, idx) => {
       const audioEl = document.getElementById(`audio_${idx}`);
       if (audioEl) {
@@ -316,35 +539,35 @@
     const audio = document.getElementById(`audio_${idx}`);
     if (!audio) return;
 
+    const item = getData().find(x => x.id === audioId);
+
     // Read on demand: Load stream URL if not set
     if (!audio.src) {
       btn.innerHTML = '<span class="loader"></span> Memuat...';
       try {
-        // Try IndexedDB first
         let url = await MisykahDB.getFileUrl(audioId);
-        // Fallback for legacy base64 if existing
-        if (!url) {
-          const item = getData().find(x => x.id === audioId);
-          if (item && item.fileData) url = item.fileData;
-        }
+        if (!url && item && item.fileData) url = item.fileData;
 
         if (!url) {
-          showToast('File audio tidak ditemukan di database.', 'error');
           btn.innerHTML = '▶️ Putar';
+          if (confirm(`File audio fisik "${item ? item.judul : 'kajian'}" belum tersimpan di memori perangkat ini (tersimpan di perangkat awal saat Anda mengunggah).\n\nApakah Anda ingin memilih file audio dari perangkat ini agar langsung bisa diputar?`)) {
+            reattachAudioFile(audioId);
+          } else {
+            showToast('File audio fisik belum tersimpan di perangkat ini.', 'info');
+          }
           return;
         }
 
         audio.src = url;
       } catch (err) {
         console.error(err);
-        showToast('Gagal memuat audio dari IndexedDB.', 'error');
+        showToast('Gagal memuat audio dari database browser.', 'error');
         btn.innerHTML = '▶️ Putar';
         return;
       }
     }
 
     if (audio.paused) {
-      // Pause other audio players
       document.querySelectorAll('audio').forEach(a => {
         if (a.id !== `audio_${idx}` && !a.paused) a.pause();
       });
@@ -352,7 +575,10 @@
         if (b.id !== `btnPlay_${idx}`) b.innerHTML = '▶️ Putar';
       });
 
-      audio.play();
+      audio.play().catch(e => {
+        console.warn('Playback error:', e);
+        showToast('Peramban memblokir pemutaran otomatis atau file kadaluarsa.', 'error');
+      });
       btn.innerHTML = '⏸ Jeda';
     } else {
       audio.pause();
@@ -401,7 +627,6 @@
     showToast(audio.loop ? 'Mode loop diaktifkan 🔁' : 'Mode loop dimatikan', audio.loop ? 'success' : 'info');
   }
 
-  // Cleanup object URLs on unload to prevent memory leaks
   window.addEventListener('beforeunload', () => {
     if (window.MisykahDB && window.MisykahDB._activeUrls) {
       window.MisykahDB._activeUrls.forEach(url => URL.revokeObjectURL(url));

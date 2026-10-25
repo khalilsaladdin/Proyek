@@ -281,15 +281,32 @@ const MisykahDB = {
 
   async saveFile(id, fileOrBlob, metadata = {}) {
     const db = await this.open();
+
+    // Pastikan file dibaca ke dalam ArrayBuffer/Blob independen
+    // agar data biner tersimpan utuh di IndexedDB dan TIDAK bergantung
+    // pada temporary handle file OS peramban yang bisa kadaluarsa/terhapus.
+    let dataToStore = fileOrBlob;
+    const mimeType = fileOrBlob.type || metadata.type || 'application/octet-stream';
+
+    if (fileOrBlob instanceof File || (fileOrBlob && typeof fileOrBlob.arrayBuffer === 'function')) {
+      try {
+        const buffer = await fileOrBlob.arrayBuffer();
+        dataToStore = new Blob([buffer], { type: mimeType });
+      } catch (err) {
+        console.warn('[MisykahDB] ArrayBuffer conversion fallback:', err);
+        dataToStore = fileOrBlob;
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const tx = db.transaction(this.storeName, 'readwrite');
       const store = tx.objectStore(this.storeName);
       store.put({
         id: id,
-        blob: fileOrBlob,
+        blob: dataToStore,
         name: fileOrBlob.name || metadata.name || '',
-        type: fileOrBlob.type || metadata.type || '',
-        size: fileOrBlob.size || metadata.size || 0,
+        type: mimeType,
+        size: dataToStore.size || metadata.size || 0,
         savedAt: Date.now()
       });
       tx.oncomplete = () => resolve(true);
@@ -303,7 +320,17 @@ const MisykahDB = {
       const tx = db.transaction(this.storeName, 'readonly');
       const store = tx.objectStore(this.storeName);
       const req = store.get(id);
-      req.onsuccess = () => resolve(req.result ? req.result.blob : null);
+      req.onsuccess = () => {
+        if (!req.result || !req.result.blob) {
+          resolve(null);
+          return;
+        }
+        let b = req.result.blob;
+        if (b instanceof ArrayBuffer) {
+          b = new Blob([b], { type: req.result.type || 'application/octet-stream' });
+        }
+        resolve(b);
+      };
       req.onerror = () => reject(req.error);
     });
   },
@@ -330,9 +357,14 @@ const MisykahDB = {
     }
     const blob = await this.getFile(id);
     if (!blob) return null;
-    const url = URL.createObjectURL(blob);
-    this._activeUrls.set(id, url);
-    return url;
+    try {
+      const url = URL.createObjectURL(blob);
+      this._activeUrls.set(id, url);
+      return url;
+    } catch(err) {
+      console.warn('[MisykahDB] Error creating object URL:', err);
+      return null;
+    }
   },
 
   revokeFileUrl(id) {
@@ -350,6 +382,13 @@ const MisykahDB = {
     return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
   }
 };
+
+// Minta browser menjaga penyimpanan data tetap permanen (Anti-Eviction)
+if (typeof navigator !== 'undefined' && navigator.storage && typeof navigator.storage.persist === 'function') {
+  navigator.storage.persist().then(persisted => {
+    if (persisted) console.log('[MisykahDB] Penyimpanan permanen aktif (anti-eviction). 🛡️');
+  }).catch(() => {});
+}
 
 // ── Date Helpers ─────────────────────────────────────────────
 

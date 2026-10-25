@@ -798,7 +798,7 @@ const MisykahCloud = {
       if (client) {
         const existing = await this.getUserByUsername(uname);
         if (existing) {
-          throw new Error('Username sudah digunakan oleh santri lain.');
+          throw new Error(`Username @${uname} sudah digunakan oleh santri lain.`);
         }
       }
 
@@ -827,8 +827,10 @@ const MisykahCloud = {
           if (error) {
             console.warn('[Misykah Cloud Auth] Gagal simpan ke santri_accounts:', error);
             if (error.code === '23505' || String(error.message).includes('duplicate') || String(error.message).includes('unique')) {
-              throw new Error('Username sudah digunakan oleh santri lain.');
+              throw new Error(`Username @${uname} sudah digunakan oleh santri lain.`);
             }
+          } else {
+            console.log(`[Misykah Cloud Auth] Akun @${uname} berhasil didaftarkan di Supabase Cloud! 🚀`);
           }
         } catch(cloudErr) {
           if (cloudErr.message && cloudErr.message.includes('sudah digunakan')) {
@@ -849,35 +851,53 @@ const MisykahCloud = {
 
     async login(username, password) {
       const uname = username.trim().toLowerCase();
+      const client = initSupabaseClient();
       let users = getUsers();
-      let targetUser = users.find(u => u.username.toLowerCase() === uname);
+      let targetUser = null;
 
-      // Jika belum ditemukan di browser/perangkat ini, cari ke Supabase Cloud
+      // 1. Cari di Supabase Cloud terlebih dahulu (Multi-Device Single Source of Truth)
+      if (client) {
+        try {
+          const cloudUser = await this.getUserByUsername(uname);
+          if (cloudUser) {
+            targetUser = cloudUser;
+            // Sinkronkan data user dari cloud ke cache browser lokal
+            const idx = users.findIndex(u => u.username.toLowerCase() === uname);
+            if (idx !== -1) users[idx] = cloudUser;
+            else users.push(cloudUser);
+            saveUsers(users);
+          }
+        } catch(e) {
+          console.warn('[Misykah Cloud Auth] Gagal fetch user dari cloud saat login:', e);
+        }
+      }
+
+      // 2. Jika offline / belum ditemukan di cloud, cari di penyimpanan lokal perangkat ini
       if (!targetUser) {
-        const cloudUser = await this.getUserByUsername(uname);
-        if (cloudUser) {
-          targetUser = cloudUser;
-          users.push(cloudUser);
-          saveUsers(users);
+        const localUser = users.find(u => u.username.toLowerCase() === uname);
+        if (localUser) {
+          targetUser = localUser;
         }
       }
 
       if (!targetUser) {
-        throw new Error('Username tidak ditemukan di perangkat ini maupun di Cloud Misykah.');
+        throw new Error(`Username "@${uname}" belum terdaftar. Silakan klik tab "Daftar Akun Baru" di atas.`);
       }
 
+      // 3. Verifikasi kata sandi
       let isValid = await verifyPassword(password, targetUser.password);
-      if (!isValid) {
+      if (!isValid && client) {
         // Cek cloud jika password baru saja diubah di perangkat lain
         const freshCloud = await this.getUserByUsername(uname);
         if (freshCloud && freshCloud.password !== targetUser.password) {
           const cloudOk = await verifyPassword(password, freshCloud.password);
           if (cloudOk) {
             isValid = true;
+            targetUser = freshCloud;
             const idx = users.findIndex(u => u.username.toLowerCase() === uname);
             if (idx !== -1) users[idx] = freshCloud;
+            else users.push(freshCloud);
             saveUsers(users);
-            targetUser = freshCloud;
           }
         }
       }
@@ -886,12 +906,61 @@ const MisykahCloud = {
         throw new Error('Kata sandi yang Anda masukkan salah. Periksa kembali huruf besar/kecil.');
       }
 
-      // Jika ada metadata di Cloud, pulihkan ke penyimpanan lokal perangkat ini
+      // 4. PENTING: Jika akun ini ada di lokal tapi belum ada di Cloud, otomatis upload sekarang!
+      if (client) {
+        try {
+          const existsOnCloud = await this.getUserByUsername(uname);
+          if (!existsOnCloud) {
+            const meta = this.gatherUserMetadata(targetUser.id);
+            await client.from('santri_accounts').insert([{
+              id: targetUser.id,
+              name: targetUser.name,
+              username: targetUser.username.toLowerCase(),
+              password_hash: targetUser.password,
+              role: targetUser.role || 'santri',
+              metadata: meta
+            }]);
+            console.log(`[Misykah Cloud Auth] Akun @${uname} berhasil diunggah ke Supabase Cloud! ☁️`);
+          }
+        } catch(upErr) {
+          console.warn('[Misykah Cloud Auth] Auto-upload local account on login:', upErr);
+        }
+      }
+
+      // 5. Jika ada metadata di Cloud, pulihkan ke penyimpanan lokal perangkat ini
       if (targetUser.metadata && typeof targetUser.metadata === 'object') {
         this.hydrateLocalStorage(targetUser.id, targetUser.metadata);
       }
 
       return targetUser;
+    },
+
+    async syncAllLocalAccountsToCloud() {
+      const client = initSupabaseClient();
+      if (!client) return;
+      const users = getUsers();
+      if (!users || users.length === 0) return;
+
+      for (const u of users) {
+        if (!u.username) continue;
+        try {
+          const cloudUser = await this.getUserByUsername(u.username);
+          if (!cloudUser) {
+            const meta = this.gatherUserMetadata(u.id);
+            await client.from('santri_accounts').insert([{
+              id: u.id,
+              name: u.name,
+              username: u.username.toLowerCase(),
+              password_hash: u.password,
+              role: u.role || 'santri',
+              metadata: meta
+            }]);
+            console.log(`[Misykah Cloud Auth] Akun lokal @${u.username} otomatis disinkronkan ke Cloud! ☁️`);
+          }
+        } catch(err) {
+          console.warn('[Misykah Cloud Auth] Auto-sync local account error:', err);
+        }
+      }
     },
 
     hydrateLocalStorage(userId, meta) {
@@ -1041,3 +1110,12 @@ const MisykahCloud = {
     setTimeout(() => window.location.reload(), 1000);
   }
 };
+
+// Jalankan auto-sinkronisasi akun lokal ke Supabase Cloud di latar belakang
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    if (window.MisykahCloud && MisykahCloud.auth && typeof MisykahCloud.auth.syncAllLocalAccountsToCloud === 'function') {
+      MisykahCloud.auth.syncAllLocalAccountsToCloud();
+    }
+  }, 1200);
+}
