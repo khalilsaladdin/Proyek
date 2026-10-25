@@ -30,8 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DEFAULT_GEMINI_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8RN6JNP6bqsdD3NReSWf7ph26YBuwFpmLGmq3wjYhxK8YRLw")
-GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+DEFAULT_GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODELS = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-3.5-flash"]
 
 # ── Helper Functions ──────────────────────────────────────────
 
@@ -178,10 +178,17 @@ def health_check():
 async def transcribe_canvas(
     file: UploadFile = File(..., description="Tangkapan layar halaman buku"),
     include_translation: bool = Form(True),
-    strip_tashkeel: bool = Form(False)
+    strip_tashkeel: bool = Form(False),
+    gemini_api_key: Optional[str] = Form(None)
 ):
+    key_to_use = (gemini_api_key or "").strip() or os.getenv("GEMINI_API_KEY", "").strip() or DEFAULT_GEMINI_KEY
+    if not key_to_use:
+        raise HTTPException(
+            status_code=401,
+            detail="Kunci API Google Gemini belum diatur di server Misykah."
+        )
     img_bytes = await file.read()
-    raw_res = call_gemini_vision(img_bytes, include_translation=include_translation)
+    raw_res = call_gemini_vision(img_bytes, include_translation=include_translation, api_key=key_to_use)
 
     if strip_tashkeel:
         raw_res = re.sub(r"[\u064B-\u065F\u0670]", "", raw_res)

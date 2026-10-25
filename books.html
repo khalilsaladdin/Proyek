@@ -390,6 +390,45 @@
       </div>
 </div>
 
+
+<!-- Modal Pengaturan Server & Kunci Gemini AI -->
+<div class="modal-overlay" id="modalPengaturanApi" style="z-index: 10002;">
+  <div class="modal" style="max-width: 520px; width: 92vw;">
+    <div class="modal-header" style="background: var(--emerald-gradient); color: #fff; border-bottom: 2px solid var(--gold);">
+      <div class="modal-title" style="color:#fff;font-size:1.05rem;font-weight:700;">⚙️ Pengaturan Kunci AI & Transkripsi</div>
+      <button class="modal-close" onclick="closeModal('modalPengaturanApi')" style="color:#fff;">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 22px;">
+      <div style="background:rgba(201,162,39,0.12);border-left:3.5px solid var(--gold);padding:12px 14px;border-radius:6px;font-size:0.83rem;margin-bottom:18px;line-height:1.5;color:var(--primary-dark);">
+        💡 <strong>Kunci Resmi Google Gemini (Gratis):</strong><br>
+        Misykah menggunakan kecerdasan buatan Google Gemini Vision untuk mentranskripsi naskah Arab gundul/berharakat. Kunci API ini <strong>100% gratis</strong> resmi dari Google AI Studio.
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label" style="font-weight:700;">Kunci Google Gemini API *</label>
+        <input type="password" id="inpGeminiApiKey" class="form-control" placeholder="Contoh: AIzaSy...">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap;gap:4px;">
+          <span style="font-size:0.75rem;color:var(--text-muted);">Kunci tersimpan aman di browser Anda</span>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size:0.78rem;color:var(--primary);font-weight:700;text-decoration:underline;">
+            🔗 Buat Kunci Gratis di Google AI Studio →
+          </a>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:18px;">
+        <label class="form-label" style="font-weight:600;font-size:0.85rem;">Alamat Server API Backend (Opsional)</label>
+        <input type="text" id="inpCustomApiUrl" class="form-control" placeholder="Biarkan kosong untuk server cloud Misykah">
+        <span style="font-size:0.75rem;color:var(--text-muted);display:block;margin-top:4px;">Isi dengan <code>http://127.0.0.1:8000</code> jika menjalankan <code>jalankan-api.bat</code> di laptop.</span>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modalPengaturanApi')">Batal</button>
+        <button type="button" class="btn btn-primary" onclick="simpanPengaturanApi()">💾 Simpan Kunci</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Ekspor Kitab ke Word (.docx) -->
 <div class="modal-overlay" id="modalBatchTranskripsi" style="z-index: 10001;">
   <div class="modal" style="max-width: 540px; width: 92vw;">
@@ -923,6 +962,35 @@
   // INTEGRASI SISTEM TRANSKRIPSI & TERJEMAHAN AI KITAB
   // =========================================================
   
+  
+  function bukaModalPengaturanApi() {
+    const key = localStorage.getItem('misykah_gemini_key') || '';
+    const api = localStorage.getItem('misykah_transcription_api') || '';
+    document.getElementById('inpGeminiApiKey').value = key;
+    document.getElementById('inpCustomApiUrl').value = api;
+    openModal('modalPengaturanApi');
+  }
+
+  function simpanPengaturanApi() {
+    const key = document.getElementById('inpGeminiApiKey').value.trim();
+    const api = document.getElementById('inpCustomApiUrl').value.trim().replace(/\/+$/, '');
+    if (key) {
+      localStorage.setItem('misykah_gemini_key', key);
+    } else {
+      localStorage.removeItem('misykah_gemini_key');
+    }
+    if (api) {
+      localStorage.setItem('misykah_transcription_api', api);
+    } else {
+      localStorage.removeItem('misykah_transcription_api');
+    }
+    closeModal('modalPengaturanApi');
+    showToast('Pengaturan API & Kunci Gemini berhasil disimpan! 🔑✨', 'success');
+    if (isDualPane) {
+      setTimeout(() => transkripsiHalamanIni(true), 400);
+    }
+  }
+
   function aturAlamatApi() {
     const current = localStorage.getItem('misykah_transcription_api') || 'http://127.0.0.1:8000';
     const newUrl = prompt('Masukkan URL server API Transkripsi (contoh: http://127.0.0.1:8000 atau https://api.anda.com):', current);
@@ -1069,8 +1137,12 @@
       formData.append('file', blob, `halaman_${pageNum}.jpg`);
       formData.append('include_translation', 'true');
       formData.append('strip_tashkeel', 'false');
+      const savedKey = (localStorage.getItem('misykah_gemini_key') || '').trim();
+      if (savedKey) formData.append('gemini_api_key', savedKey);
 
+      const savedKeyHeader = (localStorage.getItem('misykah_gemini_key') || '').trim();
       const response = await fetch(`${TRANSCRIPTION_API}/api/transcribe-canvas`, {
+        headers: savedKeyHeader ? { 'X-Gemini-Key': savedKeyHeader } : {},
         method: 'POST',
         body: formData
       });
