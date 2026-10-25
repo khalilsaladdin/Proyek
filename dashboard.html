@@ -127,19 +127,21 @@
     </div>
 
     <!-- Target Bulanan Banner (if set) -->
-    <div id="targetBanner" class="card mb-3" style="display:none;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff;padding:16px 20px;">
-      <div class="flex items-center justify-between flex-wrap gap-1">
+    <div id="targetBanner" class="royal-crest-banner" style="display:none;">
+      <div class="flex items-center justify-between flex-wrap gap-2" style="position:relative;z-index:2;">
         <div>
-          <span style="font-size:0.75rem;color:var(--gold-light);font-weight:600;letter-spacing:1px;text-transform:uppercase;">🎯 Target Hafalan Bulan Ini</span>
-          <div style="font-size:1.1rem;font-weight:700;margin-top:2px;" id="dbTargetName">-</div>
+          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(201,162,39,0.22);border:1px solid rgba(201,162,39,0.45);padding:4px 14px;border-radius:20px;font-size:0.75rem;color:var(--gold-light);font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+            <span>۞</span> Lencana Target Hafalan Bulan Ini
+          </div>
+          <div style="font-size:1.35rem;font-weight:800;color:#ffffff;margin-top:6px;letter-spacing:-0.3px;" id="dbTargetName">-</div>
         </div>
-        <div class="flex items-center gap-2">
-          <span style="font-size:0.9rem;font-weight:600;" id="dbTargetProgress">0/0 Selesai</span>
-          <a href="murojaah.html" class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);">Lihat Target</a>
+        <div class="flex items-center gap-2 flex-wrap">
+          <div id="dbTargetProgress" style="font-size:0.92rem;font-weight:600;color:#ffffff;">0/0 Selesai</div>
+          <a href="murojaah.html" class="btn btn-gold btn-sm btn-shimmer" style="padding:8px 18px;">🏆 Kelola Target</a>
         </div>
       </div>
-      <div class="target-progress-bar" style="height:8px;margin-top:10px;">
-        <div class="target-progress-fill" id="dbTargetFill" style="width:0%"></div>
+      <div class="target-progress-bar" style="height:10px;margin-top:16px;background:rgba(0,0,0,0.35);border-radius:20px;overflow:hidden;border:1px solid rgba(201,162,39,0.3);position:relative;z-index:2;">
+        <div class="target-progress-fill" id="dbTargetFill" style="width:0%;height:100%;background:var(--gold-metallic);border-radius:20px;box-shadow:0 0 12px rgba(201,162,39,0.6);transition:width 0.5s ease;"></div>
       </div>
     </div>
 

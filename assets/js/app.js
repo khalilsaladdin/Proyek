@@ -450,6 +450,42 @@ function initSidebar() {
       overlay.classList.remove('active');
     });
   }
+
+  // Aktifkan Floating Luxury Bottom Dock untuk perangkat mobile
+  initMobileBottomDock();
+}
+
+function initMobileBottomDock() {
+  if (document.getElementById('mobileBottomDock')) return;
+  const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
+
+  const dock = document.createElement('nav');
+  dock.id = 'mobileBottomDock';
+  dock.className = 'mobile-bottom-dock';
+  dock.setAttribute('aria-label', 'Navigasi Cepat Ponsel');
+  dock.innerHTML = `
+    <a href="dashboard.html" class="dock-item ${currentPath==='dashboard.html'?'active':''}">
+      <span class="dock-icon">🏠</span>
+      <span>Beranda</span>
+    </a>
+    <a href="murojaah.html" class="dock-item ${currentPath==='murojaah.html'?'active':''}">
+      <span class="dock-icon">🔄</span>
+      <span>Hafalan</span>
+    </a>
+    <a href="books.html" class="dock-item ${currentPath==='books.html'?'active':''}">
+      <span class="dock-icon">📖</span>
+      <span>Kitab</span>
+    </a>
+    <a href="faidah.html" class="dock-item ${currentPath==='faidah.html'?'active':''}">
+      <span class="dock-icon">💡</span>
+      <span>Faidah</span>
+    </a>
+    <a href="belajar.html" class="dock-item ${currentPath==='belajar.html'?'active':''}">
+      <span class="dock-icon">👥</span>
+      <span>Kelas</span>
+    </a>
+  `;
+  document.body.appendChild(dock);
 }
 
 // ── Modal Helpers ─────────────────────────────────────────────
