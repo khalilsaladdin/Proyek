@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>(مشكاة) — Kolom Faidah Ilmu</title>
-  <meta name="description" content="Kolom catatan mutiara faidah ilmu, kutipan bahasa Arab, rujukan kitab, dan penanda faidah ilmiah santri (مشكاة).">
+  <title>Misykah — Kolom Faidah Ilmu</title>
+  <meta name="description" content="Kolom catatan mutiara faidah ilmu, kutipan bahasa Arab, rujukan kitab, dan penanda faidah ilmiah santri Misykah.">
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
@@ -73,7 +73,7 @@
     <div id="guestBanner" style="display:none;background:rgba(26,92,56,0.08);border-left:4px solid var(--primary);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div>
-          <div style="font-weight:700;color:var(--primary-dark);font-size:0.95rem;">🌿 Mode Tamu — Baca Bebas Kolom Faidah (مشكاة)</div>
+          <div style="font-weight:700;color:var(--primary-dark);font-size:0.95rem;">🌿 Mode Tamu — Baca Bebas Kolom Faidah Misykah</div>
           <div style="font-size:0.83rem;color:var(--text-muted);margin-top:2px;">Anda dapat membaca, mencari, dan menyalin mutiara faidah ilmu di bawah ini. Masuk akun untuk menyimpan catatan faidah pribadi Anda.</div>
         </div>
         <a href="index.html#authHub" class="btn btn-primary btn-sm" style="font-weight:700;">🔐 Masuk / Daftar Akun</a>
@@ -398,10 +398,10 @@
       list = [
         {
           id: generateId(),
-          judul: 'Makna Kata (مشكاة) dalam Ayat Cahaya',
+          judul: 'Makna Kata Misykah dalam Ayat Cahaya',
           kategori: 'Al-Qur\'an & Tafsir',
           arabicText: 'مَثَلُ نُورِهِ كَمِشْكَاةٍ فِيهَا مِصْبَاحٌ',
-          isi: 'Ibnu Katsir dan mayoritas ahli tafsir menjelaskan bahwa "Misykah" (مشكاة) adalah lubang di dinding tempat diletakkannya lentera/pelita yang memantulkan dan mengumpulkan cahaya sehingga cahayanya menjadi sangat terang benderang. Inilah perumpamaan cahaya iman dan ilmu di dalam dada seorang mukmin.',
+          isi: 'Ibnu Katsir dan mayoritas ahli tafsir menjelaskan bahwa "Misykah" Misykah adalah lubang di dinding tempat diletakkannya lentera/pelita yang memantulkan dan mengumpulkan cahaya sehingga cahayanya menjadi sangat terang benderang. Inilah perumpamaan cahaya iman dan ilmu di dalam dada seorang mukmin.',
           sumber: 'Tafsir Al-Qur\'an Al-\'Azhim (Surah An-Nur: 35)',
           tags: ['misykah', 'cahaya', 'iman', 'tafsir'],
           likes: ['adm_1', 'usr_seed'],
@@ -1073,7 +1073,7 @@
     if (item.arabicText) text += `${item.arabicText}\n\n`;
     text += `💡 *Faidah & Pelajaran:*\n${item.isi}\n\n`;
     if (item.authorName) text += `✍️ Dibagikan oleh: *${item.authorName}*\n`;
-    text += `\n— Dibagikan melalui (مشكاة) https://misykah.vercel.app/`;
+    text += `\n— Dibagikan melalui Misykah https://misykah.vercel.app/`;
 
     navigator.clipboard.writeText(text).then(() => {
       showToast('Faidah kitab lengkap dengan rujukan berhasil disalin! 📋', 'success');

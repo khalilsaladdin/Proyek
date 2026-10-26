@@ -71,7 +71,7 @@ def get_available_gemini_models(api_key: str = "", force_refresh: bool = False) 
         except Exception:
             pass
 
-    fallback = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3-flash-preview"]
+    fallback = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-3.8-flash", "gemini-3.5-flash"]
     result = [m for m in discovered] if discovered else fallback
     for m in fallback:
         if m not in result:
@@ -227,7 +227,7 @@ def call_gemini_vision(img_bytes: bytes, include_translation: bool = True, api_k
 def health_check():
     return {
         "status": "online",
-        "service": "(مشكاة) Misykah Cloud Transcription AI",
+        "service": "Misykah Cloud Transcription AI",
         "engine": "Google Gemini Vision"
     }
 

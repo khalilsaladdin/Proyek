@@ -315,34 +315,48 @@ const MisykahDB = {
 
   async saveFile(id, fileOrBlob, metadata = {}) {
     const db = await this.open();
-
-    // Pastikan file dibaca ke dalam ArrayBuffer/Blob independen
-    // agar data biner tersimpan utuh di IndexedDB dan TIDAK bergantung
-    // pada temporary handle file OS peramban yang bisa kadaluarsa/terhapus.
-    let dataToStore = fileOrBlob;
     const mimeType = fileOrBlob.type || metadata.type || 'application/octet-stream';
+    let buffer = null;
 
     if (fileOrBlob instanceof File || (fileOrBlob && typeof fileOrBlob.arrayBuffer === 'function')) {
       try {
-        const buffer = await fileOrBlob.arrayBuffer();
-        dataToStore = new Blob([buffer], { type: mimeType });
+        buffer = await fileOrBlob.arrayBuffer();
       } catch (err) {
-        console.warn('[MisykahDB] ArrayBuffer conversion fallback:', err);
-        dataToStore = fileOrBlob;
+        console.warn('[MisykahDB] ArrayBuffer extraction warning:', err);
       }
     }
+
+    const byteLen = buffer ? buffer.byteLength : (fileOrBlob.size || metadata.size || 0);
 
     return new Promise((resolve, reject) => {
       const tx = db.transaction(this.storeName, 'readwrite');
       const store = tx.objectStore(this.storeName);
-      store.put({
+
+      const record = {
         id: id,
-        blob: dataToStore,
         name: fileOrBlob.name || metadata.name || '',
         type: mimeType,
-        size: dataToStore.size || metadata.size || 0,
+        size: byteLen,
         savedAt: Date.now()
-      });
+      };
+
+      if (buffer) {
+        record.buffer = buffer;
+        try {
+          record.blob = new Blob([buffer], { type: mimeType });
+        } catch(e) {}
+      } else {
+        record.blob = fileOrBlob;
+      }
+
+      try {
+        store.put(record);
+      } catch(putErr) {
+        // Fallback for Safari/iOS WebKit if Blob cloning fails
+        delete record.blob;
+        store.put(record);
+      }
+
       tx.oncomplete = () => resolve(true);
       tx.onerror = () => reject(tx.error);
     });
@@ -355,12 +369,14 @@ const MisykahDB = {
       const store = tx.objectStore(this.storeName);
       const req = store.get(id);
       req.onsuccess = () => {
-        if (!req.result || !req.result.blob) {
+        if (!req.result) {
           resolve(null);
           return;
         }
         let b = req.result.blob;
-        if (b instanceof ArrayBuffer) {
+        if (!b && req.result.buffer) {
+          b = new Blob([req.result.buffer], { type: req.result.type || 'application/octet-stream' });
+        } else if (b instanceof ArrayBuffer) {
           b = new Blob([b], { type: req.result.type || 'application/octet-stream' });
         }
         resolve(b);

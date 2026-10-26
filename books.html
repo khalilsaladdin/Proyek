@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>(مشكاة) — Perpustakaan Kitab Digital</title>
-  <meta name="description" content="Perpustakaan kitab kuning dan dokumen PDF santri (مشكاة) berbasis IndexedDB Blob Storage tanpa batas memori browser.">
+  <title>Misykah — Perpustakaan Kitab Digital</title>
+  <meta name="description" content="Perpustakaan kitab kuning dan dokumen PDF santri Misykah berbasis IndexedDB Blob Storage tanpa batas memori browser.">
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
@@ -306,7 +306,7 @@
         <span style="font-size:1.4rem;">📖</span>
         <div style="min-width:0;flex:1;">
           <div class="modal-title" id="pdfTitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:1.05rem;font-weight:700;color:var(--primary-dark);">Membaca Buku</div>
-          <div style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="pdfSubtitle">Penampil Kitab Digital Santri (مشكاة)</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="pdfSubtitle">Penampil Kitab Digital Santri Misykah</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -741,13 +741,21 @@
 <script src="assets/js/app.js"></script>
 <script>
   requireAuth();
-  const session = getSession();
+  const session = getSession() || { userId: 'santri_default', name: 'Santri' };
   initSidebar();
-  document.getElementById('hijriDate').textContent = getHijriDate();
-  document.getElementById('miladiDate').textContent = getMiladiDate();
+  const hEl = document.getElementById('hijriDate');
+  if (hEl) hEl.textContent = getHijriDate();
+  const mEl = document.getElementById('miladiDate');
+  if (mEl) mEl.textContent = getMiladiDate();
 
-  function getData() { return getUserData('books', session.userId); }
-  function saveData(d) { saveUserData('books', session.userId, d); }
+  function getData() { 
+    const uId = (session && session.userId) ? session.userId : 'santri_default';
+    return getUserData('books', uId); 
+  }
+  function saveData(d) { 
+    const uId = (session && session.userId) ? session.userId : 'santri_default';
+    saveUserData('books', uId, d); 
+  }
 
 
   // ── STARTER PACK KITAB PENUNTUT ILMU (حزمة طالب العلم) ─────
@@ -1069,19 +1077,26 @@
 
     if (!judul) { showToast('Judul tidak boleh kosong!', 'error'); return; }
     if (!penulis) { showToast('Nama penulis diperlukan!', 'error'); return; }
-    if (!selectedFileObj) { showToast('Pilih file PDF terlebih dahulu!', 'error'); return; }
+
+    const fileInput = document.getElementById('inpFile');
+    const fileToUpload = selectedFileObj || (fileInput && fileInput.files && fileInput.files[0]);
+
+    if (!fileToUpload) {
+      showToast('Pilih file PDF terlebih dahulu!', 'error');
+      return;
+    }
 
     const btn = document.getElementById('btnUpload');
-    btn.innerHTML = '<span class="loader"></span> Menyimpan ke IndexedDB...';
+    btn.innerHTML = '<span class="loader"></span> Menyimpan ke Database...';
     btn.disabled = true;
 
     try {
       const id = generateId();
       // Store raw Blob / File in IndexedDB
-      await MisykahDB.saveFile(id, selectedFileObj, {
-        name: selectedFileObj.name,
+      await MisykahDB.saveFile(id, fileToUpload, {
+        name: fileToUpload.name,
         type: 'application/pdf',
-        size: selectedFileObj.size
+        size: fileToUpload.size
       });
 
       // Store lightweight metadata in localStorage
@@ -1092,8 +1107,8 @@
         kategori: kategori,
         deskripsi: deskripsi,
         tanggal: todayStr(),
-        fileName: selectedFileObj.name,
-        fileSize: selectedFileObj.size,
+        fileName: fileToUpload.name,
+        fileSize: fileToUpload.size,
         fileType: 'application/pdf',
         storage: 'indexeddb'
       };
@@ -1104,15 +1119,15 @@
 
       closeModal('modalUpload');
       resetForm();
-      showToast('Buku PDF berhasil disimpan via IndexedDB! 📚', 'success');
+      showToast('Buku PDF berhasil disimpan ke Rak Anda! 📚✨', 'success');
       renderList();
     } catch (err) {
-      console.error(err);
-      showToast('Gagal menyimpan file PDF ke database browser.', 'error');
+      console.error('Error uploadBuku:', err);
+      showToast('Gagal menyimpan file PDF: ' + (err.message || 'IndexedDB error'), 'error');
+    } finally {
+      btn.innerHTML = '💾 Simpan Buku';
+      btn.disabled = false;
     }
-
-    btn.innerHTML = '💾 Simpan Buku';
-    btn.disabled = false;
   }
 
   function resetForm() {
@@ -1535,6 +1550,89 @@
     document.getElementById('panelAiContent').style.display = 'block';
   }
 
+  async function callGeminiDirect(canvas, apiKey) {
+    const base64Data = canvas.toDataURL('image/jpeg', 0.90).split(',')[1];
+    if (!base64Data) throw new Error('Gagal mengonversi halaman PDF ke gambar kanvas.');
+
+    const promptText = `Anda adalah pakar filologi bahasa Arab, tahqiq naskah turots Islam, dan penerjemah kitab para ulama.
+Tugas Anda adalah membaca gambar halaman kitab/buku Arab ini dengan sangat teliti:
+1. Ekstrak seluruh teks Arab yang ada, lengkapi dengan harakat (tashkeel/syakal) yang benar dan rapi sesuai kaidah nahwu, sharaf, dan balaghah.
+2. Terjemahkan teks tersebut ke dalam Bahasa Indonesia yang fasih, baku, jelas, dan mudah dipahami penuntut ilmu.
+3. Jika ada catatan kaki (footnote) atau penjelasan penting di margin halaman, masukkan ke dalam array footnotes.
+
+KEMBALIKAN HANYA JSON MURNI dengan format persis:
+{
+  "arabic_text": "Teks Arab berharakat di sini...",
+  "translation": "Terjemahan bahasa Indonesia di sini...",
+  "footnotes": ["Catatan kaki jika ada"]
+}`;
+
+    const models = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro'
+    ];
+
+    let lastError = null;
+
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: promptText },
+                {
+                  inline_data: {
+                    mime_type: 'image/jpeg',
+                    data: base64Data
+                  }
+                }
+              ]
+            }],
+            generationConfig: {
+              temperature: 0.2,
+              response_mime_type: 'application/json'
+            }
+          })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData.error ? errData.error.message : `HTTP ${response.status}`;
+          throw new Error(`Model ${model}: ${errMsg}`);
+        }
+
+        const data = await response.json();
+        const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawContent) throw new Error('Respon Gemini tidak memuat teks.');
+
+        let cleaned = rawContent.trim();
+        if (cleaned.startsWith('```json')) {
+          cleaned = cleaned.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+        } else if (cleaned.startsWith('```')) {
+          cleaned = cleaned.replace(/^```\s*/i, '').replace(/\s*```$/, '');
+        }
+
+        const parsed = JSON.parse(cleaned);
+        return {
+          arabic_text: parsed.arabic_text || '',
+          translation: parsed.translation || '',
+          footnotes: Array.isArray(parsed.footnotes) ? parsed.footnotes : []
+        };
+      } catch (err) {
+        console.warn(`[Misykah Direct Gemini] Model ${model} gagal:`, err.message);
+        lastError = err;
+      }
+    }
+
+    throw lastError || new Error('Semua model Gemini gagal merespon.');
+  }
+
   async function transkripsiHalamanIni(isPanel = true) {
     const canvas = document.getElementById('pdfCanvas');
     if (!canvas) {
@@ -1562,32 +1660,59 @@
     }
 
     try {
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
-      if (!blob) throw new Error('Gagal mengambil tangkapan layar halaman.');
-
-      const formData = new FormData();
-      formData.append('file', blob, `halaman_${pageNum}.jpg`);
-      formData.append('include_translation', 'true');
-      formData.append('strip_tashkeel', 'false');
       const savedKey = (localStorage.getItem('misykah_gemini_key') || '').trim();
-      if (savedKey) formData.append('gemini_api_key', savedKey);
+      let data = null;
 
-      const savedKeyHeader = (localStorage.getItem('misykah_gemini_key') || '').trim();
-      const response = await fetch(`${TRANSCRIPTION_API}/api/transcribe-canvas`, {
-        headers: savedKeyHeader ? { 'X-Gemini-Key': savedKeyHeader } : {},
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.detail || `Server merespon dengan status ${response.status}`);
+      // Jalur 1: Client-Side Direct Gemini API (Bekerja langsung di ponsel, laptop, dan web tanpa server Python!)
+      if (savedKey) {
+        try {
+          data = await callGeminiDirect(canvas, savedKey);
+        } catch(directErr) {
+          console.warn('[Misykah] Direct Gemini warning:', directErr);
+          if (directErr.message && (directErr.message.includes('API_KEY_INVALID') || directErr.message.includes('key not valid'))) {
+            throw new Error('Kunci Gemini API tidak valid. Silakan periksa kembali di Pengaturan API.');
+          }
+        }
       }
 
-      const res = await response.json();
-      if (!res.success || !res.data) throw new Error('Respon API tidak valid.');
+      // Jalur 2: Backend Server Lokal Python (jalankan-api.bat)
+      if (!data && TRANSCRIPTION_API) {
+        try {
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+          if (blob) {
+            const formData = new FormData();
+            formData.append('file', blob, `halaman_${pageNum}.jpg`);
+            formData.append('include_translation', 'true');
+            formData.append('strip_tashkeel', 'false');
+            if (savedKey) formData.append('gemini_api_key', savedKey);
 
-      const data = res.data;
+            const response = await fetch(`${TRANSCRIPTION_API}/api/transcribe-canvas`, {
+              headers: savedKey ? { 'X-Gemini-Key': savedKey } : {},
+              method: 'POST',
+              body: formData
+            });
+
+            if (response.ok) {
+              const res = await response.json();
+              if (res.success && res.data) {
+                data = res.data;
+              }
+            }
+          }
+        } catch(backendErr) {
+          console.warn('[Misykah] Backend server tidak merespon:', backendErr);
+        }
+      }
+
+      // Jika kedua jalur belum menghasilkan data
+      if (!data) {
+        if (!savedKey) {
+          throw new Error('KUNCI_API_BELUM_DIATUR');
+        } else {
+          throw new Error('Gagal memproses transkripsi. Pastikan koneksi internet aktif dan stabil.');
+        }
+      }
+
       pageAiCache[pageNum] = data; // Simpan ke cache
 
       if (isPanel) {
@@ -1605,60 +1730,54 @@
           fnBox.style.display = 'none';
         }
         const audioPlayer = document.getElementById('aiAudioPlayer');
-        if (lastArabicText) {
+        if (lastArabicText && TRANSCRIPTION_API) {
           audioPlayer.src = `${TRANSCRIPTION_API}/api/tts?text=${encodeURIComponent(lastArabicText.slice(0, 500))}`;
           document.getElementById('aiAudioContainer').style.display = 'flex';
+        } else {
+          document.getElementById('aiAudioContainer').style.display = 'none';
         }
         document.getElementById('aiLoadingBox').style.display = 'none';
         document.getElementById('aiResultBox').style.display = 'block';
         document.getElementById('transkripsiSubJudul').textContent = `Halaman ${pageNum} · Selesai Ditranskripsi`;
       }
 
-      showToast(`Halaman ${pageNum} berhasil ditranskripsikan!`, 'success');
+      showToast(`Halaman ${pageNum} berhasil ditranskripsikan! ✨`, 'success');
     } catch (err) {
       console.error('Error saat transkripsi:', err);
+      const isMissingKey = err.message === 'KUNCI_API_BELUM_DIATUR';
+      const displayMsg = isMissingKey
+        ? 'Kunci Google Gemini API belum diatur. Masukkan Kunci Gemini API (Gratis) Anda untuk mentranskripsi halaman kitab ini langsung di perangkat Anda tanpa perlu server lokal.'
+        : err.message;
+
       if (isPanel) {
         document.getElementById('panelAiLoading').style.display = 'none';
         document.getElementById('panelAiError').style.display = 'block';
-        document.getElementById('panelAiErrorMsg').textContent = err.message;
+        document.getElementById('panelAiErrorMsg').innerHTML = displayMsg;
       } else {
         document.getElementById('aiLoadingBox').style.display = 'none';
         document.getElementById('aiErrorBox').style.display = 'block';
-        document.getElementById('aiErrorMessage').textContent = err.message;
+        document.getElementById('aiErrorMessage').innerHTML = displayMsg;
+      }
+
+      if (isMissingKey) {
+        setTimeout(() => bukaPengaturanApi(), 300);
       }
     }
   }
 
-  
-  function downloadWordDirect(title, pages) {
+    function downloadWordDirect(title, pages) {
     let docContent = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>";
-    docContent += "
-<!-- Mobile Luxury Floating Dock -->
-<nav class="mobile-bottom-dock" aria-label="Navigasi Bawah">
-  <a href="dashboard.html" class="dock-item">
-    <span class="dock-icon">🏠</span>
-    <span data-i18n="nav_dashboard">Beranda</span>
-  </a>
-  <a href="murojaah.html" class="dock-item">
-    <span class="dock-icon">📖</span>
-    <span data-i18n="nav_murojaah">Murojaah</span>
-  </a>
-  <a href="belajar.html" class="dock-item">
-    <span class="dock-icon">👥</span>
-    <span data-i18n="nav_kelas">Kelas</span>
-  </a>
-  <a href="books.html" class="dock-item active">
-    <span class="dock-icon">📚</span>
-    <span data-i18n="nav_books">Kitab</span>
-  </a>
-  <a href="faidah.html" class="dock-item">
-    <span class="dock-icon">💡</span>
-    <span data-i18n="nav_faidah">Faidah</span>
-  </a>
-</nav>
-
-</body>
-</html>";
+    docContent += "<head><meta charset='utf-8'><title>" + title + "</title>";
+    docContent += "<style>body{font-family:'Amiri',Arial,sans-serif;direction:rtl;text-align:right;} .trans-box{direction:ltr;text-align:left;font-family:Arial;margin-top:10px;color:#333;}</style></head><body>";
+    pages.forEach(p => {
+      docContent += "<div style='page-break-after:always;padding:20px;'>";
+      docContent += "<h2 style='direction:ltr;text-align:left;'>Halaman " + (p.page || '') + "</h2>";
+      if (p.arabic_text) docContent += "<div style='font-size:20pt;line-height:2.0;margin-bottom:15px;'>" + p.arabic_text.replace(/\n/g, '<br>') + "</div>";
+      if (p.translation) docContent += "<div class='trans-box'><strong>Terjemahan:</strong><br>" + p.translation.replace(/\n/g, '<br>') + "</div>";
+      if (p.footnotes && p.footnotes.length) docContent += "<div class='trans-box' style='font-size:9pt;border-top:1px solid #ccc;margin-top:10px;'><strong>Catatan Kaki:</strong><br>" + p.footnotes.join('<br>') + "</div>";
+      docContent += "</div>";
+    });
+    docContent += "</body></html>";
 
     const blob = new Blob(['\ufeff' + docContent], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
@@ -1673,7 +1792,7 @@
 
   function downloadTxtDirect(title, pages) {
     let txt = "====================================================\n";
-    txt += "(مشكاة) TRANSKRIPSI KITAB: " + title + "\n";
+    txt += "Misykah TRANSKRIPSI KITAB: " + title + "\n";
     txt += "====================================================\n\n";
     pages.forEach(p => {
       txt += "\n[ --- Halaman " + (p.page || '') + " --- ]\n\n";
@@ -1865,6 +1984,31 @@
   renderList();
 </script>
 
+
+
+<!-- Mobile Luxury Floating Dock -->
+<nav class="mobile-bottom-dock" aria-label="Navigasi Bawah">
+  <a href="dashboard.html" class="dock-item">
+    <span class="dock-icon">🏠</span>
+    <span data-i18n="nav_dashboard">Beranda</span>
+  </a>
+  <a href="murojaah.html" class="dock-item">
+    <span class="dock-icon">📖</span>
+    <span data-i18n="nav_murojaah">Murojaah</span>
+  </a>
+  <a href="belajar.html" class="dock-item">
+    <span class="dock-icon">👥</span>
+    <span data-i18n="nav_kelas">Kelas</span>
+  </a>
+  <a href="books.html" class="dock-item active">
+    <span class="dock-icon">📚</span>
+    <span data-i18n="nav_books">Kitab</span>
+  </a>
+  <a href="faidah.html" class="dock-item">
+    <span class="dock-icon">💡</span>
+    <span data-i18n="nav_faidah">Faidah</span>
+  </a>
+</nav>
 
 </body>
 </html>
