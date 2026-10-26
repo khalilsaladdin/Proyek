@@ -755,38 +755,78 @@ const MisykahCloud = {
   auth: {
     _syncTimer: null,
 
-    async getUserByUsername(username) {
-      const client = initSupabaseClient();
-      if (!client) return null;
+    async _restFetch(endpoint, options = {}) {
+      const config = typeof getSupabaseConfig === 'function' ? getSupabaseConfig() : null;
+      if (!config || !config.url || !config.anonKey) return null;
+      const url = `${config.url}/rest/v1/${endpoint}`;
+      const headers = {
+        'apikey': config.anonKey,
+        'Authorization': `Bearer ${config.anonKey}`,
+        'Accept': 'application/json',
+        ...(options.headers || {})
+      };
       try {
-        const { data, error } = await client
-          .from('santri_accounts')
-          .select('id, name, username, password_hash, role, metadata, created_at')
-          .eq('username', username.toLowerCase())
-          .maybeSingle();
-
-        if (error) {
-          if (error.code !== 'PGRST116') {
-            console.warn('[Misykah Cloud Auth] getUserByUsername info:', error.message);
-          }
-          return null;
-        }
-        if (data) {
-          return {
-            id: data.id,
-            name: data.name,
-            username: data.username,
-            password: data.password_hash,
-            role: data.role || 'santri',
-            metadata: data.metadata || {},
-            createdAt: data.created_at
-          };
-        }
-        return null;
-      } catch (err) {
-        console.warn('[Misykah Cloud Auth] Exception fetching user:', err);
+        const res = await fetch(url, { ...options, headers });
+        return res;
+      } catch(err) {
+        console.warn('[Misykah Cloud REST] Fetch error:', err);
         return null;
       }
+    },
+
+    async getUserByUsername(username) {
+      if (!username) return null;
+      const uname = String(username).trim().toLowerCase();
+
+      // 1. Coba menggunakan Supabase JS SDK jika tersedia
+      const client = initSupabaseClient();
+      if (client) {
+        try {
+          const { data, error } = await client
+            .from('santri_accounts')
+            .select('id, name, username, password_hash, role, metadata, created_at')
+            .eq('username', uname)
+            .maybeSingle();
+
+          if (!error && data) {
+            return {
+              id: data.id,
+              name: data.name,
+              username: data.username,
+              password: data.password_hash,
+              role: data.role || 'santri',
+              metadata: data.metadata || {},
+              createdAt: data.created_at
+            };
+          }
+        } catch (err) {
+          console.warn('[Misykah Cloud Auth] Exception with Supabase SDK, falling back to direct REST:', err);
+        }
+      }
+
+      // 2. Direct REST Fallback (Bebas dari ketergantungan CDN JS)
+      try {
+        const res = await this._restFetch(`santri_accounts?username=eq.${encodeURIComponent(uname)}&select=id,name,username,password_hash,role,metadata,created_at`);
+        if (res && res.ok) {
+          const rows = await res.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            const data = rows[0];
+            return {
+              id: data.id,
+              name: data.name,
+              username: data.username,
+              password: data.password_hash,
+              role: data.role || 'santri',
+              metadata: data.metadata || {},
+              createdAt: data.created_at
+            };
+          }
+        }
+      } catch(restErr) {
+        console.warn('[Misykah Cloud Auth] Direct REST fetch failed:', restErr);
+      }
+
+      return null;
     },
 
     async register(name, username, password) {
@@ -794,12 +834,10 @@ const MisykahCloud = {
       if (uname.length < 3) throw new Error('Username minimal 3 karakter.');
       if (password.length < 6) throw new Error('Password minimal 6 karakter.');
 
-      const client = initSupabaseClient();
-      if (client) {
-        const existing = await this.getUserByUsername(uname);
-        if (existing) {
-          throw new Error(`Username @${uname} sudah digunakan oleh santri lain.`);
-        }
+      // Cek apakah username sudah ada di Cloud
+      const existing = await this.getUserByUsername(uname);
+      if (existing) {
+        throw new Error(`Username @${uname} sudah digunakan oleh santri lain.`);
       }
 
       const hashedPassword = await hashPassword(password);
@@ -813,6 +851,8 @@ const MisykahCloud = {
         createdAt: todayStr()
       };
 
+      let savedToCloud = false;
+      const client = initSupabaseClient();
       if (client) {
         try {
           const row = {
@@ -825,12 +865,12 @@ const MisykahCloud = {
           };
           const { error } = await client.from('santri_accounts').insert([row]);
           if (error) {
-            console.warn('[Misykah Cloud Auth] Gagal simpan ke santri_accounts:', error);
             if (error.code === '23505' || String(error.message).includes('duplicate') || String(error.message).includes('unique')) {
               throw new Error(`Username @${uname} sudah digunakan oleh santri lain.`);
             }
           } else {
-            console.log(`[Misykah Cloud Auth] Akun @${uname} berhasil didaftarkan di Supabase Cloud! 🚀`);
+            savedToCloud = true;
+            console.log(`[Misykah Cloud Auth] Akun @${uname} berhasil didaftarkan di Supabase Cloud via SDK! 🚀`);
           }
         } catch(cloudErr) {
           if (cloudErr.message && cloudErr.message.includes('sudah digunakan')) {
@@ -839,37 +879,70 @@ const MisykahCloud = {
         }
       }
 
-      // Simpan ke daftar lokal
-      let users = getUsers();
-      if (!users.some(u => u.username.toLowerCase() === uname)) {
-        users.push(newUser);
-        saveUsers(users);
+      // Jika SDK belum menyimpan ke cloud, gunakan direct REST API
+      if (!savedToCloud) {
+        try {
+          const res = await this._restFetch('santri_accounts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              id: newUser.id,
+              name: newUser.name,
+              username: newUser.username,
+              password_hash: newUser.password,
+              role: newUser.role,
+              metadata: {}
+            })
+          });
+          if (res && (res.status === 201 || res.status === 200)) {
+            savedToCloud = true;
+            console.log(`[Misykah Cloud Auth] Akun @${uname} berhasil didaftarkan via direct REST! 🚀`);
+          } else if (res && (res.status === 409 || res.status === 400)) {
+            const errBody = await res.text();
+            if (errBody.includes('duplicate') || errBody.includes('unique') || errBody.includes('23505')) {
+              throw new Error(`Username @${uname} sudah digunakan oleh santri lain.`);
+            }
+          }
+        } catch(restErr) {
+          if (restErr.message && restErr.message.includes('sudah digunakan')) throw restErr;
+          console.warn('[Misykah Cloud Auth] Direct REST register error:', restErr);
+        }
       }
+
+      // Simpan ke daftar lokal untuk fallback offline
+      let users = getUsers();
+      const existingIdx = users.findIndex(u => u.username.toLowerCase() === uname);
+      if (existingIdx !== -1) {
+        users[existingIdx] = newUser;
+      } else {
+        users.push(newUser);
+      }
+      saveUsers(users);
 
       return newUser;
     },
 
     async login(username, password) {
       const uname = username.trim().toLowerCase();
-      const client = initSupabaseClient();
       let users = getUsers();
       let targetUser = null;
 
       // 1. Cari di Supabase Cloud terlebih dahulu (Multi-Device Single Source of Truth)
-      if (client) {
-        try {
-          const cloudUser = await this.getUserByUsername(uname);
-          if (cloudUser) {
-            targetUser = cloudUser;
-            // Sinkronkan data user dari cloud ke cache browser lokal
-            const idx = users.findIndex(u => u.username.toLowerCase() === uname);
-            if (idx !== -1) users[idx] = cloudUser;
-            else users.push(cloudUser);
-            saveUsers(users);
-          }
-        } catch(e) {
-          console.warn('[Misykah Cloud Auth] Gagal fetch user dari cloud saat login:', e);
+      try {
+        const cloudUser = await this.getUserByUsername(uname);
+        if (cloudUser) {
+          targetUser = cloudUser;
+          // Sinkronkan data user dari cloud ke cache browser lokal
+          const idx = users.findIndex(u => u.username.toLowerCase() === uname);
+          if (idx !== -1) users[idx] = cloudUser;
+          else users.push(cloudUser);
+          saveUsers(users);
         }
+      } catch(e) {
+        console.warn('[Misykah Cloud Auth] Gagal fetch user dari cloud saat login:', e);
       }
 
       // 2. Jika offline / belum ditemukan di cloud, cari di penyimpanan lokal perangkat ini
@@ -886,7 +959,7 @@ const MisykahCloud = {
 
       // 3. Verifikasi kata sandi
       let isValid = await verifyPassword(password, targetUser.password);
-      if (!isValid && client) {
+      if (!isValid) {
         // Cek cloud jika password baru saja diubah di perangkat lain
         const freshCloud = await this.getUserByUsername(uname);
         if (freshCloud && freshCloud.password !== targetUser.password) {
@@ -907,24 +980,32 @@ const MisykahCloud = {
       }
 
       // 4. PENTING: Jika akun ini ada di lokal tapi belum ada di Cloud, otomatis upload sekarang!
-      if (client) {
-        try {
-          const existsOnCloud = await this.getUserByUsername(uname);
-          if (!existsOnCloud) {
-            const meta = this.gatherUserMetadata(targetUser.id);
-            await client.from('santri_accounts').insert([{
-              id: targetUser.id,
-              name: targetUser.name,
-              username: targetUser.username.toLowerCase(),
-              password_hash: targetUser.password,
-              role: targetUser.role || 'santri',
-              metadata: meta
-            }]);
-            console.log(`[Misykah Cloud Auth] Akun @${uname} berhasil diunggah ke Supabase Cloud! ☁️`);
+      try {
+        const existsOnCloud = await this.getUserByUsername(uname);
+        if (!existsOnCloud) {
+          const meta = this.gatherUserMetadata(targetUser.id);
+          const payload = {
+            id: targetUser.id,
+            name: targetUser.name,
+            username: targetUser.username.toLowerCase(),
+            password_hash: targetUser.password,
+            role: targetUser.role || 'santri',
+            metadata: meta
+          };
+          const client = initSupabaseClient();
+          if (client) {
+            await client.from('santri_accounts').insert([payload]);
+          } else {
+            await this._restFetch('santri_accounts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
           }
-        } catch(upErr) {
-          console.warn('[Misykah Cloud Auth] Auto-upload local account on login:', upErr);
+          console.log(`[Misykah Cloud Auth] Akun @${uname} berhasil diunggah ke Supabase Cloud! ☁️`);
         }
+      } catch(upErr) {
+        console.warn('[Misykah Cloud Auth] Auto-upload local account on login:', upErr);
       }
 
       // 5. Jika ada metadata di Cloud, pulihkan ke penyimpanan lokal perangkat ini
@@ -936,8 +1017,6 @@ const MisykahCloud = {
     },
 
     async syncAllLocalAccountsToCloud() {
-      const client = initSupabaseClient();
-      if (!client) return;
       const users = getUsers();
       if (!users || users.length === 0) return;
 
@@ -947,14 +1026,24 @@ const MisykahCloud = {
           const cloudUser = await this.getUserByUsername(u.username);
           if (!cloudUser) {
             const meta = this.gatherUserMetadata(u.id);
-            await client.from('santri_accounts').insert([{
+            const payload = {
               id: u.id,
               name: u.name,
               username: u.username.toLowerCase(),
               password_hash: u.password,
               role: u.role || 'santri',
               metadata: meta
-            }]);
+            };
+            const client = initSupabaseClient();
+            if (client) {
+              await client.from('santri_accounts').insert([payload]);
+            } else {
+              await this._restFetch('santri_accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+            }
             console.log(`[Misykah Cloud Auth] Akun lokal @${u.username} otomatis disinkronkan ke Cloud! ☁️`);
           }
         } catch(err) {

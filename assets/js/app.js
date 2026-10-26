@@ -138,6 +138,40 @@ function setSession(user) {
   } catch(e) {}
 }
 
+// ── KREDENSIAL AKUN TERSIMPAN (INGAT SAYA) ───────────────────
+function getSavedAccount() {
+  try {
+    const raw = localStorage.getItem('misykah_saved_account');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function saveAccountCredentials(username, password, name = '') {
+  if (!username) return false;
+  try {
+    const payload = {
+      username: username.trim().toLowerCase(),
+      password: password || '',
+      name: (name || '').trim(),
+      savedAt: Date.now()
+    };
+    localStorage.setItem('misykah_saved_account', JSON.stringify(payload));
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function clearSavedAccountCredentials() {
+  try {
+    localStorage.removeItem('misykah_saved_account');
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
 function requireAuth() {
   const session = getSession();
   if (!session || !session.userId) {

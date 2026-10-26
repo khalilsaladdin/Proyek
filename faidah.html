@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/i18n.js"></script>
 </head>
 <body>
 <button class="hamburger" id="hamburger">☰</button>
@@ -27,14 +28,27 @@
     </div>
   </div>
   <nav class="sidebar-nav">
-    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
-    <a href="murojaah.html" class="nav-item"><span class="nav-icon">📖</span> Murojaah</a>
-    <a href="muhadharah.html" class="nav-item"><span class="nav-icon">🎧</span> Muhadharah</a>
-    <a href="books.html" class="nav-item"><span class="nav-icon">📚</span> Buku Digital</a>
-    <a href="belajar.html" class="nav-item"><span class="nav-icon">👥</span> Belajar Bersama & Kelas</a>
-    <a href="faidah.html" class="nav-item active"><span class="nav-icon">💡</span> Kolom Faidah</a>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span> <span data-i18n="nav_dashboard">Dashboard</span></a>
+    <a href="murojaah.html" class="nav-item"><span class="nav-icon">📖</span> <span data-i18n="nav_murojaah">Murojaah</span></a>
+    <a href="muhadharah.html" class="nav-item"><span class="nav-icon">🎧</span> <span data-i18n="nav_muhadharah">Muhadharah</span></a>
+    <a href="books.html" class="nav-item"><span class="nav-icon">📚</span> <span data-i18n="nav_books">Buku Digital</span></a>
+    <a href="belajar.html" class="nav-item"><span class="nav-icon">👥</span> <span data-i18n="nav_kelas">Belajar Bersama & Kelas</span></a>
+    <a href="faidah.html" class="nav-item active"><span class="nav-icon">💡</span> <span data-i18n="nav_faidah">Kolom Faidah</span></a>
   </nav>
   <div class="sidebar-footer">
+    <div style="padding:0 0 10px;display:flex;justify-content:center;">
+      <div class="lang-switcher" role="group" aria-label="Pilihan Bahasa">
+        <button type="button" class="lang-btn active" data-lang="id" onclick="changeLanguage('id')" title="Bahasa Indonesia">
+          <span class="lang-flag">🇮🇩</span> <span class="lang-code">ID</span>
+        </button>
+        <button type="button" class="lang-btn" data-lang="ar" onclick="changeLanguage('ar')" title="العربية">
+          <span class="lang-flag">🇸🇦</span> <span class="lang-code">عربي</span>
+        </button>
+        <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')" title="English">
+          <span class="lang-flag">🇬🇧</span> <span class="lang-code">EN</span>
+        </button>
+      </div>
+    </div>
     <div class="user-info" id="userInfo"></div>
     <button onclick="logout()" class="btn-logout">🚪 Keluar</button>
   </div>
@@ -1297,5 +1311,30 @@
 
   loadAllFaidah();
 </script>
+
+<!-- Mobile Luxury Floating Dock -->
+<nav class="mobile-bottom-dock" aria-label="Navigasi Bawah">
+  <a href="dashboard.html" class="dock-item">
+    <span class="dock-icon">🏠</span>
+    <span data-i18n="nav_dashboard">Beranda</span>
+  </a>
+  <a href="murojaah.html" class="dock-item">
+    <span class="dock-icon">📖</span>
+    <span data-i18n="nav_murojaah">Murojaah</span>
+  </a>
+  <a href="belajar.html" class="dock-item">
+    <span class="dock-icon">👥</span>
+    <span data-i18n="nav_kelas">Kelas</span>
+  </a>
+  <a href="books.html" class="dock-item">
+    <span class="dock-icon">📚</span>
+    <span data-i18n="nav_books">Kitab</span>
+  </a>
+  <a href="faidah.html" class="dock-item active">
+    <span class="dock-icon">💡</span>
+    <span data-i18n="nav_faidah">Faidah</span>
+  </a>
+</nav>
+
 </body>
 </html>

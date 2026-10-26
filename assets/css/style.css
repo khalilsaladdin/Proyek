@@ -67,13 +67,22 @@
 
 /* ── Reset ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100vw;
+  -webkit-text-size-adjust: 100%;
+}
 body {
   font-family: 'Poppins', sans-serif;
   background: var(--body-bg);
   color: var(--text-dark);
   min-height: 100vh;
   line-height: 1.6;
+  overflow-x: hidden;
+  max-width: 100vw;
+  position: relative;
+  touch-action: pan-y;
   transition: background 0.3s ease, color 0.3s ease;
 }
 a { text-decoration: none; color: inherit; }
@@ -2032,6 +2041,11 @@ audio::-webkit-media-controls-panel { background: var(--cream-dark); }
   align-items: center;
   gap: 24px;
 }
+.portal-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 .portal-nav-link {
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.9rem;
@@ -2237,13 +2251,265 @@ audio::-webkit-media-controls-panel { background: var(--cream-dark); }
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* ── Language Switcher Component ───────────────────────────── */
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(4, 21, 12, 0.45);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 20px;
+  padding: 3px 4px;
+  gap: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.lang-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+.lang-btn:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.12);
+}
+.lang-btn.active {
+  background: var(--gold-gradient);
+  color: #072214;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.lang-btn .lang-flag {
+  font-size: 0.85rem;
+}
+
+/* ── Arabic RTL Mode Styles ────────────────────────────────── */
+html[dir="rtl"] {
+  text-align: right;
+}
+html[dir="rtl"] body.lang-ar,
+body.lang-ar {
+  font-family: 'Amiri', 'Traditional Arabic', serif, 'Poppins', sans-serif;
+}
+html[dir="rtl"] .portal-nav,
+html[dir="rtl"] .portal-brand,
+html[dir="rtl"] .portal-nav-links,
+html[dir="rtl"] .footer-grid,
+html[dir="rtl"] .footer-bottom,
+html[dir="rtl"] .auth-tabs,
+html[dir="rtl"] .form-group,
+html[dir="rtl"] .pillar-card {
+  direction: rtl;
+}
+html[dir="rtl"] .hero-verse {
+  border-left: 3px solid var(--gold);
+  border-right: 3px solid var(--gold);
+}
+html[dir="rtl"] .sidebar {
+  left: auto;
+  right: 0;
+  border-right: none;
+  border-left: 1px solid rgba(201, 162, 39, 0.22);
+}
+
+/* ── Remember Account & Credentials UI ─────────────────────── */
+.remember-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  user-select: none;
+}
+.remember-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.saved-acc-box {
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.14) 0%, rgba(14, 61, 38, 0.08) 100%);
+  border: 1.5px solid var(--gold);
+  border-radius: var(--border-radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.saved-acc-info {
+  min-width: 0;
+  flex: 1;
+}
+.saved-acc-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+[data-theme="dark"] .saved-acc-badge {
+  color: var(--gold-light);
+}
+.saved-acc-name {
+  font-weight: 700;
+  font-size: 0.96rem;
+  color: var(--primary-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-theme="dark"] .saved-acc-name {
+  color: #ffffff;
+}
+.saved-acc-uname {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Mobile Landing & Portal Responsiveness ────────────────── */
 @media (max-width: 768px) {
-  .portal-nav { padding: 12px 16px; }
-  .portal-nav-links { display: none; }
-  .hero-title { font-size: 1.6rem; }
-  .hero-calligraphy { font-size: 2.8rem; }
-  .footer-grid { grid-template-columns: 1fr; gap: 24px; }
-  .landing-hamburger { display: flex !important; }
+  .portal-nav {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .portal-nav-links {
+    display: none;
+  }
+  .portal-brand {
+    gap: 8px;
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+  }
+  .portal-brand-logo {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+  }
+  .portal-brand-title {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .portal-brand-tagline {
+    font-size: 0.62rem;
+    white-space: nowrap;
+  }
+  .portal-nav-right {
+    gap: 8px;
+  }
+  .landing-hamburger {
+    display: flex !important;
+  }
+  .portal-hero {
+    padding: 44px 16px 36px;
+  }
+  .hero-pill {
+    font-size: 0.72rem;
+    padding: 5px 12px;
+    line-height: 1.4;
+    max-width: 100%;
+    word-break: break-word;
+    white-space: normal;
+  }
+  .hero-calligraphy {
+    font-size: 2.6rem;
+    margin-bottom: 8px;
+  }
+  .hero-title {
+    font-size: 1.4rem;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+  .hero-subtitle {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+  .hero-verse {
+    padding: 12px 14px;
+    margin: 0 auto 20px;
+    max-width: 100%;
+  }
+  .hero-verse .font-arabic {
+    font-size: 1.25rem !important;
+    line-height: 1.7 !important;
+  }
+  .portal-section {
+    padding: 40px 16px;
+  }
+  .section-heading {
+    font-size: 1.45rem;
+  }
+  .section-lead {
+    font-size: 0.88rem;
+    margin-bottom: 24px;
+  }
+  .pillar-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .pillar-card {
+    padding: 20px 16px;
+  }
+  #authHub .card {
+    padding: 22px 16px !important;
+  }
+  .auth-tab {
+    padding: 9px 8px;
+    font-size: 0.82rem;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .form-control {
+    font-size: 16px !important; /* Prevents iOS Safari auto-zoom on input tap */
+  }
+}
+
+@media (max-width: 480px) {
+  .portal-hero {
+    padding: 36px 12px 30px;
+  }
+  .hero-title {
+    font-size: 1.22rem;
+  }
+  .hero-calligraphy {
+    font-size: 2.3rem;
+  }
+  .portal-section {
+    padding: 30px 12px;
+  }
+  .portal-nav {
+    padding: 8px 10px;
+  }
+  .lang-btn {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+  }
+  .saved-acc-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .saved-acc-box .btn {
+    width: 100%;
+  }
 }
 
 /* ── Dark Mode Button & Modal Fixes ──────────────────────── */

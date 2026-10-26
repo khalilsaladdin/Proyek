@@ -35,6 +35,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/i18n.js"></script>
 </head>
 <body style="background:var(--body-bg);">
 
@@ -49,49 +50,80 @@
   <a href="index.html" class="portal-brand">
     <span class="portal-brand-logo">مِشْكَاة</span>
     <div class="portal-brand-text">
-      <span class="portal-brand-title">MISYKAH</span>
-      <span class="portal-brand-tagline">PLATFORM RESMI SANTRI</span>
+      <span class="portal-brand-title" data-i18n="brand_title">MISYKAH</span>
+      <span class="portal-brand-tagline" data-i18n="brand_tagline">PLATFORM RESMI SANTRI</span>
     </div>
   </a>
 
   <nav class="portal-nav-links">
-    <a href="faidah.html" class="portal-nav-link" style="color:var(--gold-light);font-weight:600;">💡 Kolom Faidah</a>
-    <a href="belajar.html" class="portal-nav-link">👥 Kelas Bersama</a>
-    <a href="#fitur" class="portal-nav-link">Pilar Fitur</a>
-    <a href="#keunggulan" class="portal-nav-link">Keunggulan</a>
-    <a href="privacy.html" class="portal-nav-link">Piagam & Privasi</a>
-    <a href="#authHub" class="btn btn-outline btn-sm" style="color:#ffffff;border-color:var(--gold);" id="navAuthBtn">🔐 Masuk Akun</a>
+    <a href="faidah.html" class="portal-nav-link" style="color:var(--gold-light);font-weight:600;" data-i18n="nav_faidah">💡 Kolom Faidah</a>
+    <a href="belajar.html" class="portal-nav-link" data-i18n="nav_kelas">👥 Kelas Bersama</a>
+    <a href="#fitur" class="portal-nav-link" data-i18n="nav_fitur">Pilar Fitur</a>
+    <a href="#keunggulan" class="portal-nav-link" data-i18n="nav_keunggulan">Keunggulan</a>
+    <a href="privacy.html" class="portal-nav-link" data-i18n="nav_privacy">Piagam & Privasi</a>
+    <a href="#authHub" class="btn btn-outline btn-sm" style="color:#ffffff;border-color:var(--gold);" id="navAuthBtn" data-i18n="nav_login">🔐 Masuk Akun</a>
   </nav>
 
-  <button class="landing-hamburger" onclick="toggleLandingMenu()" aria-label="Menu Navigasi Mobile">☰</button>
+  <div class="portal-nav-right">
+    <!-- Language Switcher Pill -->
+    <div class="lang-switcher" role="group" aria-label="Pilihan Bahasa">
+      <button type="button" class="lang-btn active" data-lang="id" onclick="changeLanguage('id')" title="Bahasa Indonesia">
+        <span class="lang-flag">🇮🇩</span> <span class="lang-code">ID</span>
+      </button>
+      <button type="button" class="lang-btn" data-lang="ar" onclick="changeLanguage('ar')" title="العربية">
+        <span class="lang-flag">🇸🇦</span> <span class="lang-code">عربي</span>
+      </button>
+      <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')" title="English">
+        <span class="lang-flag">🇬🇧</span> <span class="lang-code">EN</span>
+      </button>
+    </div>
+
+    <button class="landing-hamburger" onclick="toggleLandingMenu()" aria-label="Menu Navigasi Mobile">☰</button>
+  </div>
 </header>
 
 <!-- Mobile Navigation Overlay -->
 <div class="landing-mobile-menu" id="landingMobileMenu" onclick="if(event.target===this) toggleLandingMenu()">
   <div class="landing-mobile-menu-inner">
     <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--cream-dark);">
-      <span style="font-weight:700;color:var(--primary-dark);">Menu Misykah</span>
+      <span style="font-weight:700;color:var(--primary-dark);" data-i18n="menu_title">Menu Misykah</span>
       <button onclick="toggleLandingMenu()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
     </div>
-    <a href="faidah.html" style="color:var(--primary);font-weight:700;">💡 Kolom Faidah (Buka Bebas)</a>
-    <a href="belajar.html">👥 Kelas & Halaqah Belajar</a>
-    <a href="#fitur" onclick="toggleLandingMenu()">✨ Pilar Fitur Utama</a>
-    <a href="#keunggulan" onclick="toggleLandingMenu()">🛡️ Keunggulan Standar</a>
-    <a href="privacy.html">📜 Piagam & Kebijakan Privasi</a>
-    <a href="#authHub" onclick="toggleLandingMenu()" style="color:var(--gold);font-weight:700;">🔐 Masuk / Daftar Santri</a>
+
+    <!-- Mobile Language Switcher Inside Menu -->
+    <div style="display:flex;justify-content:center;padding:8px 0;border-bottom:1px solid var(--cream-dark);">
+      <div class="lang-switcher" style="background:var(--cream-dark);">
+        <button type="button" class="lang-btn active" data-lang="id" onclick="changeLanguage('id');toggleLandingMenu();" style="color:var(--text-dark);">
+          <span class="lang-flag">🇮🇩</span> <span class="lang-code">ID</span>
+        </button>
+        <button type="button" class="lang-btn" data-lang="ar" onclick="changeLanguage('ar');toggleLandingMenu();" style="color:var(--text-dark);">
+          <span class="lang-flag">🇸🇦</span> <span class="lang-code">عربي</span>
+        </button>
+        <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en');toggleLandingMenu();" style="color:var(--text-dark);">
+          <span class="lang-flag">🇬🇧</span> <span class="lang-code">EN</span>
+        </button>
+      </div>
+    </div>
+
+    <a href="faidah.html" style="color:var(--primary);font-weight:700;" data-i18n="menu_faidah">💡 Kolom Faidah (Buka Bebas)</a>
+    <a href="belajar.html" data-i18n="menu_kelas">👥 Kelas & Halaqah Belajar</a>
+    <a href="#fitur" onclick="toggleLandingMenu()" data-i18n="menu_fitur">✨ Pilar Fitur Utama</a>
+    <a href="#keunggulan" onclick="toggleLandingMenu()" data-i18n="menu_keunggulan">🛡️ Keunggulan Standar</a>
+    <a href="privacy.html" data-i18n="menu_privacy">📜 Piagam & Kebijakan Privasi</a>
+    <a href="#authHub" onclick="toggleLandingMenu()" style="color:var(--gold);font-weight:700;" data-i18n="menu_login">🔐 Masuk / Daftar Santri</a>
   </div>
 </div>
 
 <!-- Hero Section -->
 <section class="portal-hero">
   <div style="position:relative;z-index:2;max-width:980px;margin:0 auto;">
-    <div class="hero-pill">
-      <span>✦</span> PLATFORM DIGITAL RESMI SANTRI & THALABUL ILMI <span>✦</span>
+    <div class="hero-pill" data-i18n="hero_badge">
+      ✦ PLATFORM DIGITAL RESMI SANTRI & THALABUL ILMI ✦
     </div>
 
     <div class="hero-calligraphy">مِشْكَاة</div>
-    <h1 class="hero-title">Menjaga Hafalan, Menuntut Ilmu, dan Menggapai Keberkahan</h1>
-    <p class="hero-subtitle">
+    <h1 class="hero-title" data-i18n="hero_title">Menjaga Hafalan, Menuntut Ilmu, dan Menggapai Keberkahan</h1>
+    <p class="hero-subtitle" data-i18n="hero_subtitle">
       Ekosistem pembelajaran islami terpadu: jadwal murojaah terstruktur dengan target bulanan, grup kelas belajar privat berbasis kode akses unik, audio muhadharah tanpa batas memori via IndexedDB, perpustakaan kitab digital, dan kolom faidah ilmiah.
     </p>
 
@@ -100,16 +132,16 @@
       <div class="font-arabic" style="font-size:1.4rem;color:var(--gold-light);line-height:1.8;direction:rtl;">
         مَثَلُ نُورِهِ كَمِشْكَاةٍ فِيهَا مِصْبَاحٌ
       </div>
-      <div style="font-size:0.83rem;color:rgba(255,255,255,0.8);margin-top:6px;">
+      <div style="font-size:0.83rem;color:rgba(255,255,255,0.8);margin-top:6px;" data-i18n="hero_verse_trans">
         "Perumpamaan cahaya Allah adalah seperti sebuah lubang yang tak tembus (misykah), yang di dalamnya ada pelita besar..." — Q.S. An-Nur: 35
       </div>
     </div>
 
     <div class="flex items-center justify-between gap-2 flex-wrap" style="justify-content:center;">
-      <a href="#authHub" class="btn btn-gold btn-shimmer" style="padding:14px 34px;font-size:1.05rem;" id="heroActionBtn">
+      <a href="#authHub" class="btn btn-gold btn-shimmer" style="padding:14px 34px;font-size:1.05rem;" id="heroActionBtn" data-i18n="hero_btn_portal">
         🚀 Buka Portal Santri
       </a>
-      <a href="#fitur" class="btn btn-outline" style="padding:13px 26px;font-size:1rem;color:#ffffff;border-color:rgba(201,162,39,0.5);background:rgba(7,34,20,0.3);backdrop-filter:blur(8px);">
+      <a href="#fitur" class="btn btn-outline" style="padding:13px 26px;font-size:1rem;color:#ffffff;border-color:rgba(201,162,39,0.5);background:rgba(7,34,20,0.3);backdrop-filter:blur(8px);" data-i18n="hero_btn_explore">
         📖 Pelajari Fitur
       </a>
     </div>
@@ -117,12 +149,12 @@
     <!-- Active User Welcome Banner (Shown dynamically if logged in) -->
     <div id="loggedInBanner" style="display:none;margin-top:28px;background:rgba(201,162,39,0.2);border:1px solid var(--gold);border-radius:12px;padding:16px 20px;">
       <div style="font-weight:600;font-size:1.05rem;color:#ffffff;">
-        Ahlan wa Sahlan, <span id="currentUserName" style="color:var(--gold-light);"></span>! 👋
+        <span data-i18n="welcome_title">Ahlan wa Sahlan,</span> <span id="currentUserName" style="color:var(--gold-light);"></span>! 👋
       </div>
-      <p style="font-size:0.85rem;color:rgba(255,255,255,0.85);margin:4px 0 12px;">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.85);margin:4px 0 12px;" data-i18n="welcome_sub">
         Sesi login Anda sedang aktif. Silakan langsung menuju dashboard untuk melanjutkan murojaah.
       </p>
-      <a href="dashboard.html" class="btn btn-primary btn-sm" style="background:#ffffff;color:var(--primary-dark);font-weight:700;">
+      <a href="dashboard.html" class="btn btn-primary btn-sm" style="background:#ffffff;color:var(--primary-dark);font-weight:700;" data-i18n="hero_btn_dashboard">
         🏠 Buka Dashboard Anda →
       </a>
     </div>
@@ -131,9 +163,9 @@
 
 <!-- Five Pillars Section -->
 <section class="portal-section" id="fitur">
-  <div class="section-badge">EKOSISTEM PEMBELAJARAN</div>
-  <h2 class="section-heading">5 Pilar Utama Platform Misykah</h2>
-  <p class="section-lead">
+  <div class="section-badge" data-i18n="pillars_badge">EKOSISTEM PEMBELAJARAN</div>
+  <h2 class="section-heading" data-i18n="pillars_heading">5 Pilar Utama Platform Misykah</h2>
+  <p class="section-lead" data-i18n="pillars_lead">
     Semua kebutuhan penuntut ilmu dirancang secara rapi dalam satu aplikasi yang ringan, elegan, dan siap digunakan kapan saja.
   </p>
 
@@ -141,51 +173,51 @@
     <!-- Pillar 1 -->
     <div class="pillar-card" style="display:flex;flex-direction:column;">
       <div class="pillar-icon">📖</div>
-      <h3 class="pillar-title">Jadwal Murojaah & Target</h3>
-      <p class="pillar-desc" style="flex:1;">
+      <h3 class="pillar-title" data-i18n="p1_title">Jadwal Murojaah & Target</h3>
+      <p class="pillar-desc" style="flex:1;" data-i18n="p1_desc">
         Kalender hafalan 7 hari, monitoring target bulanan otomatis, checklist harian, dan ekspor laporan berkala berformat terstruktur.
       </p>
-      <a href="murojaah.html" class="btn btn-outline btn-sm mt-3" style="width:100%;">📖 Buka Murojaah →</a>
+      <a href="murojaah.html" class="btn btn-outline btn-sm mt-3" style="width:100%;" data-i18n="p1_btn">📖 Buka Murojaah →</a>
     </div>
 
     <!-- Pillar 2 -->
     <div class="pillar-card" style="display:flex;flex-direction:column;border:2px solid rgba(26,92,56,0.3);">
       <div class="pillar-icon">🏫</div>
-      <h3 class="pillar-title">Grup Kelas & Kode Akses</h3>
-      <p class="pillar-desc" style="flex:1;">
+      <h3 class="pillar-title" data-i18n="p2_title">Grup Kelas & Kode Akses</h3>
+      <p class="pillar-desc" style="flex:1;" data-i18n="p2_desc">
         Buka majelis ilmu atau gabung ke grup kelas privat menggunakan kode akses unik. Dilengkapi ruang halaqah murojaah dan partner tasmi'.
       </p>
-      <a href="belajar.html" class="btn btn-primary btn-sm mt-3" style="width:100%;font-weight:700;">👥 Masuk Kelas Bersama →</a>
+      <a href="belajar.html" class="btn btn-primary btn-sm mt-3" style="width:100%;font-weight:700;" data-i18n="p2_btn">👥 Masuk Kelas Bersama →</a>
     </div>
 
     <!-- Pillar 3 -->
     <div class="pillar-card" style="display:flex;flex-direction:column;">
       <div class="pillar-icon">🎧</div>
-      <h3 class="pillar-title">Studio Audio Muhadharah</h3>
-      <p class="pillar-desc" style="flex:1;">
-        Didukung <strong>IndexedDB Blob Storage</strong> untuk menyimpan file audio rekaman besar (50MB–100MB+) dengan pemutaran read-on-demand, speed control, dan mode looping tikrar.
+      <h3 class="pillar-title" data-i18n="p3_title">Studio Audio Muhadharah</h3>
+      <p class="pillar-desc" style="flex:1;" data-i18n="p3_desc">
+        Didukung IndexedDB Blob Storage untuk menyimpan file audio rekaman besar (50MB–100MB+) serta tautan video YouTube dengan pemutaran lancar tanpa jeda.
       </p>
-      <a href="muhadharah.html" class="btn btn-outline btn-sm mt-3" style="width:100%;">🎧 Buka Studio Audio →</a>
+      <a href="muhadharah.html" class="btn btn-outline btn-sm mt-3" style="width:100%;" data-i18n="p3_btn">🎧 Buka Studio Audio →</a>
     </div>
 
     <!-- Pillar 4 -->
     <div class="pillar-card" style="display:flex;flex-direction:column;">
       <div class="pillar-icon">📚</div>
-      <h3 class="pillar-title">Perpustakaan Kitab Digital</h3>
-      <p class="pillar-desc" style="flex:1;">
-        Koleksi dan baca kitab PDF tebal langsung di peramban tanpa batas kuota localStorage. Dilengkapi PDF viewer berkecepatan tinggi.
+      <h3 class="pillar-title" data-i18n="p4_title">Perpustakaan Kitab Digital</h3>
+      <p class="pillar-desc" style="flex:1;" data-i18n="p4_desc">
+        Koleksi dan baca kitab PDF tebal langsung di peramban tanpa batas kuota localStorage. Dilengkapi Starter Pack Kitab Penuntut Ilmu yang siap dibaca.
       </p>
-      <a href="books.html" class="btn btn-outline btn-sm mt-3" style="width:100%;">📚 Buka Perpustakaan →</a>
+      <a href="books.html" class="btn btn-outline btn-sm mt-3" style="width:100%;" data-i18n="p4_btn">📚 Buka Perpustakaan →</a>
     </div>
 
     <!-- Pillar 5 -->
     <div class="pillar-card" style="display:flex;flex-direction:column;border:2px solid rgba(201,162,39,0.4);">
       <div class="pillar-icon">💡</div>
-      <h3 class="pillar-title">Kolom Faidah (فائدة)</h3>
-      <p class="pillar-desc" style="flex:1;">
+      <h3 class="pillar-title" data-i18n="p5_title">Kolom Faidah (فائدة)</h3>
+      <p class="pillar-desc" style="flex:1;" data-i18n="p5_desc">
         Ikat mutiara ilmu dengan teks kutipan Arab (font Amiri), rujukan sanad/kitab, filter kategori, penandaan bintang ⭐, dan tombol salin kutipan instan.
       </p>
-      <a href="faidah.html" class="btn btn-primary btn-sm mt-3" style="width:100%;background:var(--gold);color:#0d3d25;font-weight:700;">💡 Buka Kolom Faidah →</a>
+      <a href="faidah.html" class="btn btn-primary btn-sm mt-3" style="width:100%;background:var(--gold);color:#0d3d25;font-weight:700;" data-i18n="p5_btn">💡 Buka Kolom Faidah →</a>
     </div>
   </div>
 </section>
@@ -193,30 +225,30 @@
 <!-- Keunggulan Standar Lembaga -->
 <section style="background:var(--cream-dark);padding:50px 24px;" id="keunggulan">
   <div style="max-width:1140px;margin:0 auto;">
-    <div class="section-badge">STANDAR TEKNOLOGI MODERN</div>
-    <h2 class="section-heading" style="margin-bottom:32px;">Keunggulan Resmi untuk Kenyamanan Belajar</h2>
+    <div class="section-badge" data-i18n="tech_badge">STANDAR TEKNOLOGI MODERN</div>
+    <h2 class="section-heading" style="margin-bottom:32px;" data-i18n="tech_heading">Keunggulan Resmi untuk Kenyamanan Belajar</h2>
 
     <div class="pillar-grid">
       <div class="pillar-card" style="background:var(--card-bg);">
         <div style="font-size:1.5rem;color:var(--primary);margin-bottom:8px;">🔒</div>
-        <h4 style="font-size:1.05rem;font-weight:700;color:var(--primary-dark);margin-bottom:8px;">Kedaulatan & Keamanan Data</h4>
-        <p style="font-size:0.86rem;color:var(--text-dark);line-height:1.6;">
-          Password santri dienkripsi menggunakan standar <strong>SHA-256 (Web Crypto API)</strong>. Seluruh data hafalan dan file tersimpan aman di perangkat Anda.
+        <h4 style="font-size:1.05rem;font-weight:700;color:var(--primary-dark);margin-bottom:8px;" data-i18n="tech_sec_title">Kedaulatan & Keamanan Data</h4>
+        <p style="font-size:0.86rem;color:var(--text-dark);line-height:1.6;" data-i18n="tech_sec_desc">
+          Password santri dienkripsi SHA-256 dan akun tersinkronisasi aman ke Cloud Database Supabase dengan mode multi-perangkat.
         </p>
       </div>
 
       <div class="pillar-card" style="background:var(--card-bg);">
         <div style="font-size:1.5rem;color:var(--primary);margin-bottom:8px;">📱</div>
-        <h4 style="font-size:1.05rem;font-weight:700;color:var(--primary-dark);margin-bottom:8px;">Progressive Web App (PWA)</h4>
-        <p style="font-size:0.86rem;color:var(--text-dark);line-height:1.6;">
+        <h4 style="font-size:1.05rem;font-weight:700;color:var(--primary-dark);margin-bottom:8px;" data-i18n="tech_pwa_title">Progressive Web App (PWA)</h4>
+        <p style="font-size:0.86rem;color:var(--text-dark);line-height:1.6;" data-i18n="tech_pwa_desc">
           Bisa di-install sebagai aplikasi resmi di Android, iOS, Windows, dan MacOS. Langsung muncul di layar beranda tanpa toko aplikasi pihak ketiga.
         </p>
       </div>
 
       <div class="pillar-card" style="background:var(--card-bg);">
         <div style="font-size:1.5rem;color:var(--primary);margin-bottom:8px;">🌙</div>
-        <h4 style="font-size:1.05rem;font-weight:700;color:var(--primary-dark);margin-bottom:8px;">Mode Malam (Dark Mode)</h4>
-        <p style="font-size:0.86rem;color:var(--text-dark);line-height:1.6;">
+        <h4 style="font-size:1.05rem;font-weight:700;color:var(--primary-dark);margin-bottom:8px;" data-i18n="tech_dark_title">Mode Malam (Dark Mode)</h4>
+        <p style="font-size:0.86rem;color:var(--text-dark);line-height:1.6;" data-i18n="tech_dark_desc">
           Dukungan tema malam islami yang sejuk di mata, sangat nyaman saat murojaah hafalan pada waktu sahur atau qiyamul lail.
         </p>
       </div>
@@ -226,33 +258,50 @@
 
 <!-- Integrated Auth Hub Section -->
 <section class="portal-section" id="authHub">
-  <div class="section-badge">AKSES PENGGUNA</div>
-  <h2 class="section-heading">Portal Masuk & Pendaftaran Santri</h2>
-  <p class="section-lead">
+  <div class="section-badge" data-i18n="auth_badge">AKSES PENGGUNA</div>
+  <h2 class="section-heading" data-i18n="auth_heading">Portal Masuk & Pendaftaran Santri</h2>
+  <p class="section-lead" data-i18n="auth_lead">
     Masuk ke akun Anda atau daftarkan akun baru untuk mulai memantau murojaah hari ini.
   </p>
 
-  <div style="max-width:440px;margin:0 auto;">
+  <div style="max-width:440px;margin:0 auto;width:100%;">
     <div class="card" style="padding:32px 28px;box-shadow:var(--shadow-lg);">
       <!-- Tabs -->
       <div class="auth-tabs" style="margin-bottom:24px;">
-        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">🔐 Masuk Akun</button>
-        <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">✨ Daftar Santri Baru</button>
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')" data-i18n="tab_login">🔐 Masuk Akun</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')" data-i18n="tab_register">✨ Daftar Santri Baru</button>
       </div>
 
       <!-- Login Form -->
       <div class="auth-form active" id="formLogin">
-        <h3 style="font-size:1.15rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px;">Selamat Datang Kembali</h3>
-        <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:14px;">Silakan masukkan username dan sandi santri</p>
+        <h3 style="font-size:1.15rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px;" data-i18n="login_title">Selamat Datang Kembali</h3>
+        <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:14px;" data-i18n="login_subtitle">Silakan masukkan username dan sandi santri</p>
         
+        <!-- Saved Account (Remembered) Box -->
+        <div id="savedAccountBox" class="saved-acc-box" style="display:none;">
+          <div class="saved-acc-info">
+            <div class="saved-acc-badge" data-i18n="saved_acc_title">AKUN TERSIMPAN DI PERANGKAT INI</div>
+            <div class="saved-acc-name" id="savedAccName">Santri Misykah</div>
+            <div class="saved-acc-uname" id="savedAccUser">@santri</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="loginWithSavedAccount()" style="font-weight:700;padding:8px 14px;white-space:nowrap;" data-i18n="saved_acc_login">
+              ⚡ Masuk Langsung
+            </button>
+            <button type="button" onclick="forgetSavedAccount()" style="background:none;border:none;color:var(--text-muted);font-size:0.75rem;cursor:pointer;text-align:center;text-decoration:underline;" data-i18n="saved_acc_forget">
+              Hapus Akun Tersimpan
+            </button>
+          </div>
+        </div>
+
         <!-- Quick Demo Account Box -->
         <div style="background:rgba(26,92,56,0.07);border:1px dashed var(--primary);border-radius:8px;padding:12px;margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
             <div style="font-size:0.8rem;color:var(--primary-dark);line-height:1.4;">
-              <strong>💡 Akun Uji Coba (Demo):</strong><br>
+              <strong data-i18n="demo_account">💡 Akun Uji Coba (Demo):</strong><br>
               User: <code style="background:var(--cream-dark);padding:1px 5px;border-radius:4px;font-weight:600;">santri</code> | Sandi: <code style="background:var(--cream-dark);padding:1px 5px;border-radius:4px;font-weight:600;">santri123</code>
             </div>
-            <button type="button" class="btn btn-primary btn-sm" onclick="loginDemoAccount()" style="font-size:0.75rem;padding:6px 12px;white-space:nowrap;font-weight:700;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="loginDemoAccount()" style="font-size:0.75rem;padding:6px 12px;white-space:nowrap;font-weight:700;" data-i18n="demo_quick_btn">
               ⚡ Masuk Cepat
             </button>
           </div>
@@ -260,52 +309,59 @@
 
         <form onsubmit="handleLogin(event)">
           <div class="form-group">
-            <label class="form-label">Username</label>
-            <input type="text" id="loginUsername" class="form-control" placeholder="Username Anda" required autocomplete="username">
+            <label class="form-label" data-i18n="lbl_username">Username</label>
+            <input type="text" id="loginUsername" class="form-control" placeholder="Username Anda" data-i18n-placeholder="ph_username" required autocomplete="username">
           </div>
           <div class="form-group">
-            <label class="form-label">Kata Sandi</label>
-            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            <label class="form-label" data-i18n="lbl_password">Kata Sandi</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" data-i18n-placeholder="ph_password" required autocomplete="current-password">
           </div>
+          
+          <!-- Remember Me Checkbox -->
+          <label class="remember-wrap">
+            <input type="checkbox" id="rememberMe" checked>
+            <span data-i18n="remember_me">Simpan akun & kata sandi di perangkat ini (Ingat Saya)</span>
+          </label>
+
           <div id="loginError" class="text-danger mb-2" style="font-size:0.84rem;display:none;"></div>
-          <button type="submit" class="btn btn-primary btn-full" id="btnLogin" style="width:100%;padding:12px;font-size:0.95rem;font-weight:700;">
+          <button type="submit" class="btn btn-primary btn-full" id="btnLogin" style="width:100%;padding:12px;font-size:0.95rem;font-weight:700;" data-i18n="btn_login">
             Masuk Portal
           </button>
         </form>
         <p style="text-align:center;margin-top:16px;font-size:0.84rem;color:var(--text-muted);">
-          Belum punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--primary);font-weight:600;">Daftar akun sekarang</a>
+          <span data-i18n="no_account">Belum punya akun?</span> <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color:var(--primary);font-weight:600;" data-i18n="link_register">Daftar akun sekarang</a>
         </p>
       </div>
 
       <!-- Register Form -->
       <div class="auth-form" id="formRegister">
-        <h3 style="font-size:1.15rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px;">Buat Akun Santri Baru</h3>
-        <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px;">Bergabunglah dengan majelis murojaah digital</p>
+        <h3 style="font-size:1.15rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px;" data-i18n="reg_title">Buat Akun Santri Baru</h3>
+        <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px;" data-i18n="reg_subtitle">Bergabunglah dengan majelis murojaah digital</p>
         
         <form onsubmit="handleRegister(event)">
           <div class="form-group">
-            <label class="form-label">Nama Lengkap</label>
-            <input type="text" id="regName" class="form-control" placeholder="Contoh: Ahmad Fadhil" required>
+            <label class="form-label" data-i18n="lbl_fullname">Nama Lengkap</label>
+            <input type="text" id="regName" class="form-control" placeholder="Contoh: Ahmad Fadhil" data-i18n-placeholder="ph_fullname" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Username Unik</label>
-            <input type="text" id="regUsername" class="form-control" placeholder="Username tanpa spasi" required autocomplete="username">
+            <label class="form-label" data-i18n="lbl_reg_user">Username Unik</label>
+            <input type="text" id="regUsername" class="form-control" placeholder="Username tanpa spasi" data-i18n-placeholder="ph_reg_user" required autocomplete="username">
           </div>
           <div class="form-group">
-            <label class="form-label">Kata Sandi</label>
-            <input type="password" id="regPassword" class="form-control" placeholder="Minimal 6 karakter" required autocomplete="new-password">
+            <label class="form-label" data-i18n="lbl_password">Kata Sandi</label>
+            <input type="password" id="regPassword" class="form-control" placeholder="Minimal 6 karakter" data-i18n-placeholder="ph_reg_pwd" required autocomplete="new-password">
           </div>
           <div class="form-group">
-            <label class="form-label">Konfirmasi Kata Sandi</label>
-            <input type="password" id="regConfirm" class="form-control" placeholder="Ulangi kata sandi" required autocomplete="new-password">
+            <label class="form-label" data-i18n="lbl_confirm_pwd">Konfirmasi Kata Sandi</label>
+            <input type="password" id="regConfirm" class="form-control" placeholder="Ulangi kata sandi" data-i18n-placeholder="ph_confirm_pwd" required autocomplete="new-password">
           </div>
           <div id="regError" class="text-danger mb-2" style="font-size:0.84rem;display:none;"></div>
-          <button type="submit" class="btn btn-primary btn-full" id="btnRegister" style="width:100%;padding:12px;font-size:0.95rem;font-weight:700;">
+          <button type="submit" class="btn btn-primary btn-full" id="btnRegister" style="width:100%;padding:12px;font-size:0.95rem;font-weight:700;" data-i18n="btn_register">
             Daftar Sekarang
           </button>
         </form>
         <p style="text-align:center;margin-top:16px;font-size:0.84rem;color:var(--text-muted);">
-          Sudah punya akun? <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color:var(--primary);font-weight:600;">Masuk di sini</a>
+          <span data-i18n="have_account">Sudah punya akun?</span> <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color:var(--primary);font-weight:600;" data-i18n="link_login">Masuk di sini</a>
         </p>
       </div>
     </div>
@@ -320,7 +376,7 @@
         <span class="font-arabic" style="font-size:2rem;color:var(--gold);">مِشْكَاة</span>
         <span style="font-weight:700;font-size:1.1rem;letter-spacing:1px;">(مشكاة) — MISYKAH</span>
       </div>
-      <p class="footer-desc">
+      <p class="footer-desc" data-i18n="footer_desc">
         Platform resmi murojaah, halaqah kelas berbasis kode akses, dan thalabul ilmi santri berbasis web modern. Didedikasikan bagi para penghafal Al-Qur'an dan penuntut ilmu syar'i.
       </p>
       <div style="margin-top:14px;color:var(--gold-light);font-size:0.8rem;">
@@ -329,20 +385,20 @@
     </div>
 
     <div>
-      <div class="footer-title">Navigasi Utama</div>
+      <div class="footer-title" data-i18n="footer_nav_title">Navigasi Utama</div>
       <div class="footer-links">
-        <a href="faidah.html" class="footer-link">💡 Kolom Faidah</a>
-        <a href="belajar.html" class="footer-link">👥 Kelas & Halaqah</a>
-        <a href="#fitur" class="footer-link">Pilar Fitur</a>
-        <a href="#authHub" class="footer-link">Portal Masuk</a>
-        <a href="privacy.html" class="footer-link">Piagam & Privasi</a>
+        <a href="faidah.html" class="footer-link" data-i18n="nav_faidah">💡 Kolom Faidah</a>
+        <a href="belajar.html" class="footer-link" data-i18n="nav_kelas">👥 Kelas & Halaqah</a>
+        <a href="#fitur" class="footer-link" data-i18n="nav_fitur">Pilar Fitur</a>
+        <a href="#authHub" class="footer-link" data-i18n="nav_login">Portal Masuk</a>
+        <a href="privacy.html" class="footer-link" data-i18n="nav_privacy">Piagam & Privasi</a>
       </div>
     </div>
 
     <div>
-      <div class="footer-title">Bantuan & Dokumen</div>
+      <div class="footer-title" data-i18n="footer_help_title">Bantuan & Dokumen</div>
       <div class="footer-links">
-        <a href="privacy.html" class="footer-link">Kebijakan Privasi</a>
+        <a href="privacy.html" class="footer-link" data-i18n="footer_privacy_link">Kebijakan Privasi</a>
         <a href="manifest.json" class="footer-link" target="_blank">PWA Manifest</a>
         <a href="sitemap.xml" class="footer-link" target="_blank">Peta Situs (Sitemap)</a>
       </div>
@@ -350,8 +406,8 @@
   </div>
 
   <div class="footer-bottom">
-    <div>&copy; 2026 <strong>Misykah</strong>. Hak Cipta Dilindungi Undang-Undang.</div>
-    <div>Platform Resmi Pembelajaran Santri Digital Modern</div>
+    <div>&copy; 2026 <strong>Misykah</strong>. <span data-i18n="footer_rights">Hak Cipta Dilindungi Undang-Undang.</span></div>
+    <div data-i18n="footer_tagline">Platform Resmi Pembelajaran Santri Digital Modern</div>
   </div>
 </footer>
 
@@ -363,6 +419,57 @@
   function toggleLandingMenu() {
     const m = document.getElementById('landingMobileMenu');
     if (m) m.classList.toggle('active');
+  }
+
+  // Inisialisasi Akun Tersimpan (Remember Me) saat pertama buka
+  function initSavedAccountUI() {
+    const saved = typeof getSavedAccount === 'function' ? getSavedAccount() : null;
+    const box = document.getElementById('savedAccountBox');
+    const uInput = document.getElementById('loginUsername');
+    const pInput = document.getElementById('loginPassword');
+    const remCb = document.getElementById('rememberMe');
+
+    if (saved && saved.username) {
+      if (uInput) uInput.value = saved.username;
+      if (pInput && saved.password) pInput.value = saved.password;
+      if (remCb) remCb.checked = true;
+
+      if (box) {
+        const nameEl = document.getElementById('savedAccName');
+        const userEl = document.getElementById('savedAccUser');
+        if (nameEl) nameEl.textContent = saved.name || saved.username;
+        if (userEl) userEl.textContent = '@' + saved.username;
+        box.style.display = 'flex';
+      }
+    } else {
+      if (box) box.style.display = 'none';
+    }
+  }
+
+  async function loginWithSavedAccount() {
+    const saved = typeof getSavedAccount === 'function' ? getSavedAccount() : null;
+    if (!saved || !saved.username) return;
+    const uInput = document.getElementById('loginUsername');
+    const pInput = document.getElementById('loginPassword');
+    if (uInput) uInput.value = saved.username;
+    if (pInput) pInput.value = saved.password || '';
+    const fakeEvent = { preventDefault: () => {} };
+    await handleLogin(fakeEvent);
+  }
+
+  function forgetSavedAccount() {
+    if (typeof clearSavedAccountCredentials === 'function') {
+      clearSavedAccountCredentials();
+    }
+    const uInput = document.getElementById('loginUsername');
+    const pInput = document.getElementById('loginPassword');
+    if (uInput) uInput.value = '';
+    if (pInput) pInput.value = '';
+    const box = document.getElementById('savedAccountBox');
+    if (box) box.style.display = 'none';
+    if (typeof showToast === 'function') {
+      showToast('Kredensial akun tersimpan telah dibersihkan dari perangkat ini.', 'info');
+    }
   }
 
   // Check session on load
@@ -383,6 +490,15 @@
       heroBtn.innerHTML = '🏠 Buka Dashboard Anda';
       heroBtn.href = 'dashboard.html';
     }
+  }
+
+  // Jalankan UI Akun Tersimpan saat DOM siap
+  document.addEventListener('DOMContentLoaded', () => {
+    initSavedAccountUI();
+  });
+  // Jika DOM sudah siap sebelumnya
+  if (document.readyState !== 'loading') {
+    initSavedAccountUI();
   }
 
   function switchAuthTab(tab) {
@@ -410,7 +526,7 @@
     const btn = document.getElementById('btnLogin');
 
     errEl.style.display = 'none';
-    btn.innerHTML = '<span class="loader"></span> Memverifikasi...';
+    btn.innerHTML = '<span class="loader"></span> ' + (typeof MISYKAH_I18N !== 'undefined' ? MISYKAH_I18N.t('btn_logging_in', 'Memverifikasi...') : 'Memverifikasi...');
     btn.disabled = true;
 
     try {
@@ -434,6 +550,14 @@
         user = localUser;
       }
 
+      // SIMPAN KREDENSIAL JIKA "INGAT SAYA" DICENTANG
+      const remCb = document.getElementById('rememberMe');
+      if (remCb && remCb.checked) {
+        saveAccountCredentials(username, password, user.name);
+      } else {
+        clearSavedAccountCredentials();
+      }
+
       setSession(user);
       showToast(`Ahlan wa Sahlan, ${user.name}! 🌿`, 'success');
       setTimeout(() => { 
@@ -444,7 +568,8 @@
       console.warn('[Misykah] Login error:', err);
       errEl.innerHTML = `❌ ${err.message || 'Terjadi kendala saat login. Silakan coba lagi.'}`;
       errEl.style.display = 'block';
-      btn.innerHTML = 'Masuk Portal'; btn.disabled = false;
+      btn.innerHTML = (typeof MISYKAH_I18N !== 'undefined' ? MISYKAH_I18N.t('btn_login', 'Masuk Portal') : 'Masuk Portal');
+      btn.disabled = false;
     }
   }
 
@@ -472,7 +597,7 @@
       errEl.style.display = 'block'; return;
     }
 
-    btn.innerHTML = '<span class="loader"></span> Mendaftarkan...';
+    btn.innerHTML = '<span class="loader"></span> ' + (typeof MISYKAH_I18N !== 'undefined' ? MISYKAH_I18N.t('btn_registering', 'Mendaftarkan...') : 'Mendaftarkan...');
     btn.disabled = true;
 
     try {
@@ -497,6 +622,9 @@
         saveUsers(users);
       }
 
+      // OTOMATIS SIMPAN KREDENSIAL PENDAFTAR KE PERANGKAT
+      saveAccountCredentials(username, password, name);
+
       setSession(newUser);
       showToast('Pendaftaran akun berhasil! Mengalihkan ke Dashboard...', 'success');
       setTimeout(() => { 
@@ -507,7 +635,8 @@
       console.warn('[Misykah] Register error:', err);
       errEl.textContent = '❌ ' + (err.message || 'Terjadi kendala saat pendaftaran. Silakan coba lagi.');
       errEl.style.display = 'block';
-      btn.innerHTML = 'Daftar Sekarang'; btn.disabled = false;
+      btn.innerHTML = (typeof MISYKAH_I18N !== 'undefined' ? MISYKAH_I18N.t('btn_register', 'Daftar Sekarang') : 'Daftar Sekarang');
+      btn.disabled = false;
     }
   }
 </script>
